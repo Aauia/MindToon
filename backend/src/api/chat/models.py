@@ -56,7 +56,7 @@ class ComicsPage(SQLModel, table=True):
     world_type: WorldType = Field(default=WorldType.IMAGINATION_WORLD)
     
     # Comic content
-    image_base64: str = Field()  # Store the comic image as base64
+    image_url: str = Field()  # Store the comic image URL from Supabase Storage
     panels_data: str = Field()  # JSON string of panel information
     
     # User relationship
