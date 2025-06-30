@@ -34,6 +34,23 @@ struct RootView: View {
                     MainDashboardView(navigation: navigation)
                 case .create:
                     ComicGeneratorView(viewModel: ComicGeneratorViewModel(), navigation: navigation)
+                case .comicGenerator:
+                    ComicGeneratorView(viewModel: ComicGeneratorViewModel(), navigation: navigation)
+                case .comicViewer:
+                    ComicViewerView(navigation: navigation)
+                        .onAppear {
+                            print("🔍 RootView: comicViewer case reached")
+                            if let comic = navigation.generatedComic {
+                                print("🔍 Comic data available for viewer:")
+                                print("🔍 - Title: '\(comic.title)'")
+                                print("🔍 - ImageBase64 length: \(comic.imageBase64.count)")
+                                print("🔍 - About to display ComicViewerView")
+                            } else {
+                                print("⚠️ No comic available in navigation")
+                            }
+                        }
+                case .imageGenerator:
+                    ImageGeneratorView(navigation: navigation)
                 case .worlds:
                     WorldsView(navigation: navigation)
                 case .profile:
@@ -63,10 +80,17 @@ struct RootView: View {
                 }
             }
         }
+        .onAppear {
+            print("🔍 RootView appeared - Auth: \(authManager.isAuthenticated), Screen: \(navigation.currentScreen)")
+        }
         .onReceive(authManager.$isAuthenticated) { isAuthenticated in
+            print("🔍 Auth state changed: \(isAuthenticated)")
             if isAuthenticated {
                 navigation.currentScreen = .mainDashboard
             }
+        }
+        .onReceive(navigation.$currentScreen) { screen in
+            print("🔍 Screen changed to: \(screen)")
         }
     }
 }

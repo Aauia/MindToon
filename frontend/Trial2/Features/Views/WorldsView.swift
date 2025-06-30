@@ -83,7 +83,7 @@ struct WorldSelectionButton: View {
                     .fill(color)
                     .frame(width: 60, height: 60)
                     .overlay(
-                        Image(systemName: "sparkles.square.fill") // Example icon
+                                                    Image(systemName: "sparkles") // Fixed: sparkles.square.fill doesn't exist
                             .font(.title2)
                             .foregroundColor(.white)
                     )

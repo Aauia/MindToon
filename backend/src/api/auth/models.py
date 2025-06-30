@@ -1,7 +1,10 @@
 from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, List, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship
 from pydantic import EmailStr
+
+if TYPE_CHECKING:
+    from api.chat.models import ComicsPage
 
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True)
@@ -15,6 +18,9 @@ class User(UserBase, table=True):
     hashed_password: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    comics: List["ComicsPage"] = Relationship(back_populates="user")
 
 class UserCreate(UserBase):
     password: str

@@ -27,6 +27,7 @@ class AuthManager: ObservableObject {
             
             // Store token
             UserDefaults.standard.set(tokenResponse.accessToken, forKey: tokenKey)
+            print("🔑 Token stored successfully: \(tokenResponse.accessToken.prefix(10))...")
             
             // Fetch user profile
             let user = try await APIClient.shared.getUserProfile(token: tokenResponse.accessToken)
@@ -105,20 +106,26 @@ class AuthManager: ObservableObject {
     
     // MARK: - Helper Methods
     func getStoredToken() -> String? {
-        return UserDefaults.standard.string(forKey: tokenKey)
+        let token = UserDefaults.standard.string(forKey: tokenKey)
+        print("🔑 Getting stored token: \(token != nil ? "✅ Found" : "❌ Nil")")
+        return token
     }
     
     private func checkAuthStatus() {
         let token = getStoredToken()
+        print("🔐 Checking auth status - token exists: \(token != nil)")
         if let token = token, !token.isEmpty {
             isAuthenticated = true
+            print("✅ User authenticated with token: \(token.prefix(10))...")
             
             // Load stored user data
             if let userData = UserDefaults.standard.data(forKey: userKey),
                let user = try? JSONDecoder().decode(UserResponse.self, from: userData) {
                 currentUser = user
+                print("👤 User data loaded: \(user.username)")
             }
         } else {
+            print("❌ No valid token found")
             isAuthenticated = false
             currentUser = nil
         }

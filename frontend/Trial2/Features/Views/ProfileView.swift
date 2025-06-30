@@ -96,7 +96,7 @@ struct ProfileView: View {
                     Spacer()
                 }
                 .padding(.bottom, 20)
-                .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height - 150)
+                .frame(maxWidth: .infinity, minHeight: 600)
             }
 
             BottombarView(navigation: navigation)

@@ -16,8 +16,13 @@ langchain
 langchain-openai
 psycopg2-binary
 python-dotenv
-pillow
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 email-validator
+certifi
+Pillow
+huggingface-hub
+supabase
+aiofiles
+uuid

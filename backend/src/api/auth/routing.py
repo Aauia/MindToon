@@ -74,4 +74,4 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 @router.get("/users", response_model=List[UserRead])
 def get_all_users(session: Session = Depends(get_session)):
     users = session.exec(select(User)).all()
-    return users 
+    return users  

@@ -75,7 +75,16 @@ struct ComicPanel: Codable {
 
 struct ScenarioResponse: Codable {
     let scenario: String
-    let message: String
+    let genre: String
+    let artStyle: String?
+    let invalidRequest: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case scenario
+        case genre
+        case artStyle = "art_style"
+        case invalidRequest = "invalid_request"
+    }
 }
 
 // MARK: - Utility Models
