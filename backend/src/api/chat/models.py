@@ -56,7 +56,8 @@ class ComicsPage(SQLModel, table=True):
     world_type: WorldType = Field(default=WorldType.IMAGINATION_WORLD)
     
     # Comic content
-    image_url: str = Field()  # Store the comic image URL from Supabase Storage
+    image_url: Optional[str] = Field(default=None)  # Store the comic image URL from Supabase Storage (optional)
+    image_base64: Optional[str] = Field(default=None)  # Store the comic image as base64 (alternative to URL)
     panels_data: str = Field()  # JSON string of panel information
     
     # User relationship
@@ -127,3 +128,41 @@ class ComicCollectionItem(SQLModel, table=True):
     comic_id: int = Field(foreign_key="comicspage.id")
     order_position: int = Field(default=0)
     added_at: datetime = Field(default_factory=datetime.utcnow)
+
+class DetailedScenario(SQLModel, table=True):
+    """Model for storing detailed narrative scenarios that complement comics"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    
+    # Link to the comic this scenario complements
+    comic_id: int = Field(foreign_key="comicspage.id")
+    
+    # Basic scenario information
+    title: str = Field(max_length=200)
+    concept: str = Field(max_length=1000)  # Original user prompt
+    genre: str = Field(max_length=100)
+    art_style: str = Field(max_length=100)
+    
+    # World assignment
+    world_type: WorldType = Field(default=WorldType.IMAGINATION_WORLD)
+    
+    # Scenario content
+    scenario_data: str = Field()  # JSON string of the detailed scenario (DetailedScenarioSchema)
+    
+    # Metadata
+    word_count: int = Field(default=0)
+    reading_time_minutes: int = Field(default=0)
+    
+    # User relationship
+    user_id: int = Field(foreign_key="user.id")
+    user: Optional[User] = Relationship()
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default=None)
+    
+    # Optional fields
+    is_favorite: bool = Field(default=False)
+    is_public: bool = Field(default=False)
+    
+    class Config:
+        from_attributes = True

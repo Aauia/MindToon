@@ -20,9 +20,30 @@ enum BottomBarTab: String, CaseIterable {
 // MARK: - BottombarView
 struct BottombarView: View {
     @ObservedObject var navigation: NavigationViewModel
-    @State private var selectedTab: BottomBarTab = .home
+    
+    // Helper to map NavigationViewModel.Screen to BottomBarTab
+    private func tab(for screen: NavigationViewModel.Screen) -> BottomBarTab {
+        switch screen {
+        case .mainDashboard: return .home
+        case .create, .comicGenerator: return .create
+        case .worlds, .dreamWorld, .mindWorld, .imaginationWorld: return .worlds
+        case .profile: return .profile
+        default: return .home
+        }
+    }
+    
+    // Helper to map BottomBarTab to NavigationViewModel.Screen
+    private func screen(for tab: BottomBarTab) -> NavigationViewModel.Screen {
+        switch tab {
+        case .home: return .mainDashboard
+        case .create: return .create
+        case .worlds: return .worlds
+        case .profile: return .profile
+        }
+    }
 
     var body: some View {
+        let selectedTab = tab(for: navigation.currentScreen)
         HStack {
             Spacer()
             // Iterate over all cases of our enum to create tabs
@@ -30,19 +51,11 @@ struct BottombarView: View {
                 TabBarItem(
                     iconName: tab.iconName,
                     label: tab.rawValue,
-                    isSelected: self.selectedTab == tab
+                    isSelected: selectedTab == tab
                 ) {
-                    self.selectedTab = tab // Update selected tab
-                    // Trigger navigation based on the tapped tab
-                    switch tab {
-                    case .home:
-                        navigation.currentScreen = .mainDashboard
-                    case .create:
-                        navigation.currentScreen = .create
-                    case .worlds:
-                        navigation.currentScreen = .worlds
-                    case .profile:
-                        navigation.currentScreen = .profile
+                    // Only update if not already selected
+                    if selectedTab != tab {
+                        navigation.currentScreen = screen(for: tab)
                     }
                 }
                 Spacer()

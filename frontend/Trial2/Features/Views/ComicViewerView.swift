@@ -11,6 +11,8 @@ struct ComicViewerView: View {
     @State private var isLoading = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var hasDetailedScenario = false
+    @State private var isLoadingScenario = false
     
     private let apiClient = APIClient.shared
     
@@ -108,6 +110,23 @@ struct ComicViewerView: View {
                             }
                             .disabled(!isSaved) // Can only favorite saved comics
                             
+                            // Detailed Scenario Button
+                            if hasDetailedScenario {
+                                Button(action: {
+                                    viewDetailedScenario()
+                                }) {
+                                    if isLoadingScenario {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "text.book.closed.fill")
+                                            .font(.title2)
+                                            .foregroundColor(.purple)
+                                    }
+                                }
+                                .disabled(isLoadingScenario)
+                            }
+                            
                             Button(action: {
                                 downloadComic()
                             }) {
@@ -161,7 +180,12 @@ struct ComicViewerView: View {
                 }
                 .onAppear {
                     print("🎬 ComicViewerView appeared - Title: '\(comic.title)'")
-                    print("🎬 ImageBase64 length: \(comic.imageBase64.count)")
+                    print("🎬 ImageBase64 length: \(comic.imageBase64?.count)")
+                    
+                    // Check if this comic has a detailed scenario
+                    Task {
+                        await checkForDetailedScenario()
+                    }
                 }
             } else {
                 // Show error when no comic is available
@@ -195,7 +219,7 @@ struct ComicViewerView: View {
             return
         }
         
-        guard !comic.imageBase64.isEmpty else {
+        guard let base64 = comic.imageBase64, !base64.isEmpty else {
             print("❌ No image data available for download")
             return
         }
@@ -218,7 +242,7 @@ struct ComicViewerView: View {
             return
         }
         
-        guard !comic.imageBase64.isEmpty else {
+        guard let base64 = comic.imageBase64, !base64.isEmpty else {
             print("❌ No image data available for sharing")
             return
         }
@@ -256,12 +280,7 @@ struct ComicViewerView: View {
     private func decodeComicImage() -> Data? {
         guard let comic = navigation.generatedComic else { return nil }
         
-        let cleanBase64 = comic.imageBase64
-            .replacingOccurrences(of: "data:image/png;base64,", with: "")
-            .replacingOccurrences(of: "data:image/jpeg;base64,", with: "")
-            .replacingOccurrences(of: "data:image/jpg;base64,", with: "")
-            .replacingOccurrences(of: "data:image/webp;base64,", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanBase64 = comic.imageBase64 ?? ""
         
         return Data(base64Encoded: cleanBase64)
     }
@@ -282,7 +301,7 @@ struct ComicViewerView: View {
             return
         }
         
-        guard !comic.imageBase64.isEmpty else {
+        guard let base64 = comic.imageBase64, !base64.isEmpty else {
             alertMessage = "Cannot save comic: No image data available"
             showAlert = true
             return
@@ -297,6 +316,7 @@ struct ComicViewerView: View {
                 genre: comic.genre,
                 artStyle: comic.artStyle,
                 worldType: comic.worldType, // Save to the comic's original world
+                includeDetailedScenario: comic.hasDetailedScenario,
                 imageBase64: comic.imageBase64,
                 panelsData: comic.panelsData,
                 isFavorite: false,
@@ -369,6 +389,57 @@ struct ComicViewerView: View {
             return "sparkles"
         }
     }
+    
+    // MARK: - Detailed Scenario Functions
+    
+    @MainActor
+    private func checkForDetailedScenario() async {
+        guard let comic = navigation.generatedComic else { return }
+        
+        // Use the hasDetailedScenario field from the comic response
+        hasDetailedScenario = comic.hasDetailedScenario
+        
+        if hasDetailedScenario {
+            print("✅ Comic has detailed scenario: \(comic.title)")
+        } else {
+            print("ℹ️ Comic does not have detailed scenario: \(comic.title)")
+        }
+    }
+    
+    private func viewDetailedScenario() {
+        Task {
+            await performViewDetailedScenario()
+        }
+    }
+    
+    @MainActor
+    private func performViewDetailedScenario() async {
+        guard let comic = navigation.generatedComic else { return }
+        
+        isLoadingScenario = true
+        
+        do {
+            let token = await AuthManager.shared.getStoredToken()
+            guard let token = token else {
+                alertMessage = "Please log in to view detailed scenarios"
+                showAlert = true
+                isLoadingScenario = false
+                return
+            }
+            
+            let scenario = try await apiClient.getScenarioByComic(comicId: comic.id, token: token)
+            
+            // Navigate to detailed scenario view
+            navigation.showDetailedScenario(with: scenario)
+            
+        } catch {
+            alertMessage = "Failed to load detailed scenario: \(error.localizedDescription)"
+            showAlert = true
+            print("❌ Failed to load detailed scenario: \(error)")
+        }
+        
+        isLoadingScenario = false
+    }
 }
 
 // MARK: - Comic Image View Component
@@ -376,51 +447,53 @@ struct ComicImageView: View {
     let comic: ComicGenerationResponse
     
     var body: some View {
-        // Debug info
-        let _ = print("🔍 ComicImageView - imageBase64.isEmpty: \(comic.imageBase64.isEmpty)")
-        let _ = print("🔍 ComicImageView - imageBase64.count: \(comic.imageBase64.count)")
-        let _ = !comic.imageBase64.isEmpty ? print("🔍 First 50 chars: \(String(comic.imageBase64.prefix(50)))") : ()
-        
-        return VStack(spacing: 16) {
-            if !comic.imageBase64.isEmpty {
-                // Clean the base64 string (remove data URL prefix if present)
-                let cleanBase64 = comic.imageBase64
-                    .replacingOccurrences(of: "data:image/png;base64,", with: "")
-                    .replacingOccurrences(of: "data:image/jpeg;base64,", with: "")
-                    .replacingOccurrences(of: "data:image/jpg;base64,", with: "")
-                    .replacingOccurrences(of: "data:image/webp;base64,", with: "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                let _ = print("🧹 Cleaned base64 length: \(cleanBase64.count)")
-                let _ = print("🧹 First 50 chars after cleaning: \(String(cleanBase64.prefix(50)))")
-                
-                if let imageData = Data(base64Encoded: cleanBase64) {
-                    let _ = print("✅ Successfully decoded base64 to Data: \(imageData.count) bytes")
-                    
-                    if let uiImage = UIImage(data: imageData) {
-                        let _ = print("✅ Successfully created UIImage: \(uiImage.size)")
-                        
-                        // SUCCESS: Display the PNG image - More compact
-                        Image(uiImage: uiImage)
+        VStack(spacing: 16) {
+            if let urlString = comic.imageUrl, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .frame(maxHeight: 450)
+                    case .success(let image):
+                        image
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(maxWidth: .infinity)
-                            .frame(maxHeight: 450) // Reduced from 800 to 450 for more compact display
+                            .frame(maxHeight: 450)
                             .cornerRadius(12)
                             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                             .padding(.horizontal)
-                        
-                    } else {
-                        let _ = print("❌ Failed to create UIImage from Data")
-                        showErrorMessage("Failed to create image from data")
+                    case .failure:
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(maxHeight: 450)
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .font(.title)
+                                    .foregroundColor(.gray)
+                            )
+                    @unknown default:
+                        EmptyView()
                     }
-                } else {
-                    let _ = print("❌ Failed to decode base64 string")
-                    showErrorMessage("Failed to decode base64 string")
                 }
+            } else if let base64 = comic.imageBase64, !base64.isEmpty, let imageData = Data(base64Encoded: base64), let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .frame(maxHeight: 450)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                    .padding(.horizontal)
             } else {
-                let _ = print("❌ No image data provided")
-                showErrorMessage("No image data provided")
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(maxHeight: 450)
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.title)
+                            .foregroundColor(.gray)
+                    )
             }
         }
     }
@@ -439,8 +512,8 @@ struct ComicImageView: View {
                 .font(.body)
                 .foregroundColor(.gray)
             
-            if !comic.imageBase64.isEmpty {
-                Text("Base64 data: \(comic.imageBase64.count) characters")
+            if let base64 = comic.imageBase64, !base64.isEmpty {
+                Text("Base64 data: \(base64.count) characters")
                     .font(.caption)
                     .foregroundColor(.blue)
             }
@@ -482,7 +555,8 @@ struct ComicViewerView_Previews: PreviewProvider {
             worldType: .dreamWorld,
             imageBase64: "",
             panelsData: "{\"panel1\":{\"description\":\"A person standing by the ocean\",\"dialogue\":\"I used to love the water\"}}",
-            createdAt: "2024-01-01T00:00:00Z"
+            createdAt: "2024-01-01T00:00:00Z",
+            hasDetailedScenario: true
         )
         
         let navigation = NavigationViewModel()

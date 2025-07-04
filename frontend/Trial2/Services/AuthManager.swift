@@ -1,10 +1,17 @@
 import Foundation
 import SwiftUI
 
+// Explicit typealiases to resolve ambiguity with old APIModel.swift
+typealias AuthUserResponse = UserResponse
+typealias AuthRegisterRequest = RegisterRequest
+typealias AuthAccountDeletionRequest = AccountDeletionRequest
+typealias AuthDeletionSummary = DeletionSummary
+
 @MainActor
 class AuthManager: ObservableObject {
     @Published var isAuthenticated = false
-    @Published var currentUser: UserResponse?
+    @Published var isRegistered = false
+    @Published var currentUser: AuthUserResponse?
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -49,10 +56,10 @@ class AuthManager: ObservableObject {
     
     func register(username: String, email: String, fullName: String, password: String) async {
         isLoading = true
-        errorMessage = nil
+        errorMessage = nil // <--- CRUCIAL: Clear error at the start of registration attempt
         
         do {
-            let registerRequest = RegisterRequest(
+            let registerRequest = AuthRegisterRequest(
                 username: username,
                 email: email,
                 fullName: fullName,
@@ -60,17 +67,30 @@ class AuthManager: ObservableObject {
             )
             
             let user = try await APIClient.shared.register(user: registerRequest)
-            currentUser = user
+            currentUser = user // Set current user on successful registration
             
             // Store user data
             if let userData = try? JSONEncoder().encode(user) {
                 UserDefaults.standard.set(userData, forKey: userKey)
             }
             
+            isRegistered = true // Indicate successful registration
+            errorMessage = nil // <--- CRUCIAL: Clear any error message after successful registration API call
+            
             // Auto-login after registration
             await login(username: username, password: password)
+            
+            // After successful login, `isAuthenticated` will be true, and `RootView` will navigate.
+            // Ensure no error is set after this point unless login specifically fails.
+            if !isAuthenticated { // If login failed after registration
+                errorMessage = "Registration successful but auto-login failed. Please try logging in."
+            }
+            
         } catch {
+            // This block is is for actual errors during the `APIClient.shared.register` call
             errorMessage = error.localizedDescription
+            isRegistered = false // Registration failed
+            isAuthenticated = false // Not authenticated if registration failed
         }
         
         isLoading = false
@@ -80,6 +100,7 @@ class AuthManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: tokenKey)
         UserDefaults.standard.removeObject(forKey: userKey)
         isAuthenticated = false
+        isRegistered = false
         currentUser = nil
         errorMessage = nil
     }
@@ -104,6 +125,41 @@ class AuthManager: ObservableObject {
         }
     }
     
+    // MARK: - Account Deletion (New functionality as per cursor rules)
+    func deleteAccount(usernameConfirmation: String) async throws -> AuthDeletionSummary? {
+        guard let currentUser = currentUser else {
+            throw APIError.unauthorized
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            let confirmation = AuthAccountDeletionRequest(
+                confirmDeletion: true,
+                usernameConfirmation: usernameConfirmation,
+                understandingAcknowledgment: "I understand this action is permanent and irreversible"
+            )
+            
+            let token = getStoredToken()
+            guard let token = token else {
+                throw APIError.unauthorized
+            }
+            
+            let summary = try await APIClient.shared.deleteAccount(confirmation: confirmation, token: token)
+            
+            // Clear local data
+            logout()
+            
+            isLoading = false
+            return summary // summary is now optional
+        } catch {
+            isLoading = false
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
+    
     // MARK: - Helper Methods
     func getStoredToken() -> String? {
         let token = UserDefaults.standard.string(forKey: tokenKey)
@@ -120,7 +176,7 @@ class AuthManager: ObservableObject {
             
             // Load stored user data
             if let userData = UserDefaults.standard.data(forKey: userKey),
-               let user = try? JSONDecoder().decode(UserResponse.self, from: userData) {
+               let user = try? JSONDecoder().decode(AuthUserResponse.self, from: userData) {
                 currentUser = user
                 print("👤 User data loaded: \(user.username)")
             }

@@ -26,3 +26,5 @@ huggingface-hub
 supabase
 aiofiles
 uuid
+opencv-python-headless
+numpy

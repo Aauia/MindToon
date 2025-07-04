@@ -61,7 +61,7 @@ struct WorldsView: View {
                 .frame(maxHeight: 80)
         }
         .toolbar {
-            CustomTopBarContent(title: "Worlds", showBackButton: true, leadingAction: {
+            CustomTopBarContent(title: "", showBackButton: true, leadingAction: {
                 navigation.currentScreen = .mainDashboard // Or previous screen
             })
         }

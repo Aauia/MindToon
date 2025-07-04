@@ -3,83 +3,82 @@ import SwiftUI
 struct CustomTopBarContent: View {
     let title: String
     var showBackButton: Bool = false
-    var leadingIcon: String? = nil // Optional custom leading icon
-    var trailingIcon: String? = nil // Optional custom trailing icon
+    var leadingIcon: String? = nil
+    var trailingIcon: String? = nil
     var leadingAction: (() -> Void)? = nil
     var trailingAction: (() -> Void)? = nil
 
-    @Environment(\.dismiss) private var dismiss // For default back button action
-
     var body: some View {
         HStack {
-            // Leading Content (Back Button or Custom Icon)
+            // Leading: Back button or icon
             if showBackButton {
                 Button(action: {
-                    leadingAction?() ?? dismiss() // Use custom action or default dismiss
+                    leadingAction?()
                 }) {
-                    Image(systemName: "arrow.backward")
-                        .font(.title2)
-                        .foregroundColor(.primary) // Or your app's accent color
+                    Image(systemName: "chevron.left")
+                        .font(.title3.bold())
+                        .foregroundColor(.blue)
+                        .padding(10)
+                        .background(Color.white.opacity(0.25))
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                 }
+                .padding(.leading, -4) // ⬅️ shifted more left
             } else if let leadingIcon = leadingIcon {
                 Button(action: {
-                    leadingAction?() // Use custom action
+                    leadingAction?()
                 }) {
                     Image(systemName: leadingIcon)
                         .font(.title2)
                         .foregroundColor(.primary)
                 }
+                .padding(.leading, 10)
             } else {
-                // Placeholder to align title if no leading button/icon
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(width: 30) // Match size of an icon/button
+                Spacer().frame(width: 44)
             }
 
             Spacer()
 
-            // Title
-            Text(title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
+            // Title (optional)
+            if !showBackButton {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+            }
 
             Spacer()
 
-            // Trailing Content (Custom Icon)
+            // Trailing icon (optional)
             if let trailingIcon = trailingIcon {
                 Button(action: {
-                    trailingAction?() // Use custom action
+                    trailingAction?()
                 }) {
                     Image(systemName: trailingIcon)
                         .font(.title2)
                         .foregroundColor(.primary)
                 }
+                .padding(.trailing, 10)
             } else {
-                // Placeholder to align title if no trailing button/icon
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(width: 30) // Match size of an icon/button
+                Spacer().frame(width: 44)
             }
         }
-        .padding(.horizontal)
-        // Note: The .background() and .shadow() will typically be handled by the NavigationView/Toolbar system
-        // or by the parent view, as toolbars have their own styling.
+        .frame(height: 44)
+        .padding(.vertical, 10)
+        .background(Color.clear)
     }
 }
 
-// MARK: - Preview
 #Preview {
-    NavigationView { // Embed in NavigationView for preview context
-        Color.white.edgesIgnoringSafeArea(.all) // Background for preview
-            .toolbar {
-                // Example usage in a preview context
-                CustomTopBarContent(title: "My Screen", showBackButton: true, trailingIcon: "gearshape.fill") {
-                    print("Back tapped in preview")
-                } trailingAction: {
-                    print("Settings tapped in preview")
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
+    VStack(spacing: 0) {
+        CustomTopBarContent(
+            title: "Preview",
+            showBackButton: true,
+            leadingAction: { print("Back tapped") },
+            trailingAction: { print("Settings tapped") }
+        )
+        .padding(.top, 50)
+        Spacer()
     }
+    .background(Color(.systemGroupedBackground))
 }

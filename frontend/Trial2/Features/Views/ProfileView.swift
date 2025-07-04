@@ -72,6 +72,27 @@ struct ProfileView: View {
                         ProfileOptionRow(icon: "bookmark.fill", title: "Saved Ideas") {
                             print("Navigate to Saved Ideas - (ViewModel action needed)")
                         }
+                        ProfileOptionRow(icon: "folder.fill", title: "My Collections") {
+                            navigation.navigateTo(.collections)
+                        }
+                        ProfileOptionRow(icon: "doc.text.fill", title: "My Scenarios") {
+                            navigation.navigateTo(.scenarios)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    
+                    // Account Management Section (New)
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("Account Management")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                            .padding(.horizontal)
+                        
+                        ProfileOptionRow(icon: "trash.fill", title: "Delete Account", isDestructive: true) {
+                            viewModel.showAccountDeletion()
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top, 20)
@@ -104,7 +125,7 @@ struct ProfileView: View {
         }
         .background(LinearGradient(gradient: Gradient(colors: [Color.yellow.opacity(0.8), Color.white.opacity(0.8)]), startPoint: .topLeading, endPoint: .bottomTrailing).edgesIgnoringSafeArea(.all))
         .toolbar {
-            CustomTopBarContent(title: "Profile", showBackButton: true, leadingAction: {
+            CustomTopBarContent(title: "", showBackButton: true, leadingAction: {
                 navigation.currentScreen = .mainDashboard // Or previous screen
             })
         }
@@ -113,26 +134,37 @@ struct ProfileView: View {
         .onAppear {
             viewModel.loadUserProfile()
         }
+        .sheet(isPresented: $viewModel.showingAccountDeletion) {
+            AccountDeletionView(profileViewModel: viewModel, navigation: navigation)
+        }
     }
 }
 
-// MARK: - ProfileOptionRow (Reusable Helper View for list items) - No Change Here
+// MARK: - ProfileOptionRow (Reusable Helper View for list items)
 struct ProfileOptionRow: View {
     let icon: String
     let title: String
+    let isDestructive: Bool
     let action: () -> Void
+    
+    init(icon: String, title: String, isDestructive: Bool = false, action: @escaping () -> Void) {
+        self.icon = icon
+        self.title = title
+        self.isDestructive = isDestructive
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
             HStack {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(.purple)
+                    .foregroundColor(isDestructive ? .red : .purple)
                     .frame(width: 30)
 
                 Text(title)
                     .font(.body)
-                    .foregroundColor(.black)
+                    .foregroundColor(isDestructive ? .red : .black)
 
                 Spacer()
 

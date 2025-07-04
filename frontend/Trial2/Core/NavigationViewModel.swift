@@ -17,9 +17,14 @@ class NavigationViewModel: ObservableObject {
         case comicGenerator
         case comicViewer
         case imageGenerator
+        case collections
+        case scenarios
+        case detailedScenario
+        case accountDeletion
     }
     @Published var currentScreen: Screen = .welcome
     @Published var generatedComic: ComicGenerationResponse?
+    @Published var selectedScenario: DetailedScenario?
     
     func navigateTo(_ screen: Screen) {
         currentScreen = screen
@@ -28,7 +33,7 @@ class NavigationViewModel: ObservableObject {
     func showComicViewer(with comic: ComicGenerationResponse) {
         print("📱 NavigationViewModel.showComicViewer called")
         print("📱 Comic title: '\(comic.title)'")
-        print("📱 Comic imageBase64 length: \(comic.imageBase64.count)")
+     
         print("📱 Current thread: \(Thread.isMainThread ? "Main" : "Background")")
         generatedComic = comic
         print("📱 generatedComic set successfully")
@@ -37,7 +42,15 @@ class NavigationViewModel: ObservableObject {
         print("📱 currentScreen is now: \(currentScreen)")
         print("📱 generatedComic after assignment: \(generatedComic?.title ?? "nil")")
     }
-} 
+    
+    func showDetailedScenario(with scenario: DetailedScenario) {
+        print("📱 NavigationViewModel.showDetailedScenario called")
+        print("📱 Scenario plot summary: '\(scenario.plotSummary)'")
+        selectedScenario = scenario
+        currentScreen = .detailedScenario
+        print("📱 selectedScenario set and navigated to detailedScenario")
+    }
+}
 
 
 struct BottombarView_Previews: PreviewProvider {

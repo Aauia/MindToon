@@ -88,8 +88,10 @@ app.add_middleware(
 )
 
 # Include routers
+from api.supabase.routing import router as supabase_router
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(chat_router, prefix="/api/chats", tags=["Chat & Comics"])
+app.include_router(supabase_router, prefix="/api/supabase", tags=["Supabase"])
 
 MY_PROJECT = os.environ.get("MY_PROJECT") or "this is my project"
 API_KEY = os.environ.get("API_KEY")
@@ -131,6 +133,59 @@ def get_ios_config():
             "profile": "/api/auth/me",
             "comics": "/api/chats/scenario/comic/sheet/",
             "scenarios": "/api/chats/scenario/"
+        }
+    }
+
+@app.get("/api/ios/auth-guide")
+def get_auth_guide():
+    """Authentication guide for iOS developers"""
+    return {
+        "title": "MindToon API Authentication Guide",
+        "steps": {
+            "1": {
+                "action": "Register or Login",
+                "endpoints": {
+                    "register": "POST /api/auth/register",
+                    "login": "POST /api/auth/token"
+                },
+                "example_request": {
+                    "method": "POST",
+                    "url": "/api/auth/token",
+                    "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+                    "body": "username=admin&password=ad123"
+                }
+            },
+            "2": {
+                "action": "Get Access Token", 
+                "response_format": {
+                    "access_token": "your_jwt_token_here",
+                    "token_type": "bearer"
+                }
+            },
+            "3": {
+                "action": "Use Token in Requests",
+                "header_format": "Authorization: Bearer your_jwt_token_here",
+                "example": {
+                    "method": "POST",
+                    "url": "/api/chats/generate-comic",
+                    "headers": {
+                        "Authorization": "Bearer your_jwt_token_here",
+                        "Content-Type": "application/json"
+                    }
+                }
+            }
+        },
+        "test_endpoints": {
+            "no_auth_required": [
+                "GET /api/chats/test/health",
+                "POST /api/chats/test/generate-comic-no-auth",
+                "POST /api/chats/test/generate-scenario-no-auth"
+            ]
+        },
+        "default_user": {
+            "username": "admin",
+            "password": "ad123",
+            "note": "Use this for testing"
         }
     }
 

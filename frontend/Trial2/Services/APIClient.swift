@@ -6,6 +6,14 @@ class APIClient {
     private let baseURLString = "http://localhost:8080" // Change for production
     private var baseURL: URL { URL(string: baseURLString)! }
     
+    // Custom URLSession with increased timeout
+    private let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 120 // seconds
+        config.timeoutIntervalForResource = 120 // seconds
+        return URLSession(configuration: config)
+    }()
+    
     private init() {}
     
     // MARK: - Token Management
@@ -28,14 +36,15 @@ class APIClient {
         let body = "username=\(username)&password=\(password)"
         request.httpBody = body.data(using: .utf8)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
         return try JSONDecoder().decode(TokenResponse.self, from: data)
@@ -50,41 +59,74 @@ class APIClient {
         let jsonData = try JSONEncoder().encode(user)
         request.httpBody = jsonData
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        print("📡 APIClient: Sending registration request to \(url)")
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ APIClient: Register - Invalid HTTP response.")
             throw APIError.invalidResponse
         }
         
-        if httpResponse.statusCode != 201 {
-            throw APIError.serverError(httpResponse.statusCode)
+        print("📡 APIClient: Register response status code: \(httpResponse.statusCode)")
+        if httpResponse.statusCode != 201 && httpResponse.statusCode != 200 { // Accept both 201 and 200 as success
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            print("❌ APIClient: Register failed with status \(httpResponse.statusCode). Error: \(errorData)")
+            throw errorData
         }
         
-        return try JSONDecoder().decode(UserResponse.self, from: data)
+        let decodedResponse = try JSONDecoder().decode(UserResponse.self, from: data)
+        print("✅ APIClient: Registration successful. UserResponse received: \(decodedResponse)")
+        return decodedResponse
     }
-    
     func getUserProfile(token: String) async throws -> UserResponse {
         let url = URL(string: "\(baseURLString)/api/auth/me")!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
         return try JSONDecoder().decode(UserResponse.self, from: data)
     }
     
-    // MARK: - Comic Generation & Management
+    func deleteAccount(confirmation: AccountDeletionRequest, token: String) async throws -> DeletionSummary? {
+        let url = URL(string: "\(baseURLString)/api/auth/delete-account")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(confirmation)
+        request.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        // If data is empty, just return nil
+        if data.isEmpty {
+            return nil
+        }
+        return try? JSONDecoder().decode(DeletionSummary.self, from: data)
+    }
     
-    /// Generate a complete comic with LoRA character consistency and save it to user's library
+    // MARK: - Comic Generation & Management
     func generateComicWithData(request: ComicSaveRequest, token: String) async throws -> ComicGenerationResponse {
         let url = URL(string: "\(baseURLString)/api/chats/generate-comic-with-data")!
         var urlRequest = URLRequest(url: url)
@@ -95,20 +137,20 @@ class APIClient {
         let jsonData = try JSONEncoder().encode(request)
         urlRequest.httpBody = jsonData
         
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
         return try JSONDecoder().decode(ComicGenerationResponse.self, from: data)
     }
     
-    /// Generate a comic and return as PNG image stream (legacy method)
     func generateComicImage(request: ComicGenerationRequest, token: String) async throws -> Data {
         let url = URL(string: "\(baseURLString)/api/chats/generate-comic")!
         var urlRequest = URLRequest(url: url)
@@ -119,7 +161,7 @@ class APIClient {
         let jsonData = try JSONEncoder().encode(request)
         urlRequest.httpBody = jsonData
         
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
@@ -132,7 +174,6 @@ class APIClient {
         return data
     }
     
-    /// Get current user's comics with optional filtering
     func getMyComics(
         token: String,
         limit: Int = 20,
@@ -164,94 +205,84 @@ class APIClient {
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
         return try JSONDecoder().decode([ComicListResponse].self, from: data)
     }
     
-    /// Get a specific comic by ID (includes full image data)
     func getComic(id: Int, token: String) async throws -> ComicResponse {
         let url = URL(string: "\(baseURLString)/api/chats/comic/\(id)")!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
         return try JSONDecoder().decode(ComicResponse.self, from: data)
     }
     
-    /// Update comic metadata (title, favorite status, public status)
-    func updateComic(
-        id: Int,
-        title: String? = nil,
-        isFavorite: Bool? = nil,
-        isPublic: Bool? = nil,
-        token: String
-    ) async throws -> APISuccessResponse {
+    func updateComic(id: Int, updates: ComicUpdateRequest, token: String) async throws -> ComicResponse {
         let url = URL(string: "\(baseURLString)/api/chats/comic/\(id)")!
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        var body: [String: Any] = [:]
-        if let title = title { body["title"] = title }
-        if let isFavorite = isFavorite { body["is_favorite"] = isFavorite }
-        if let isPublic = isPublic { body["is_public"] = isPublic }
+        let jsonData = try JSONEncoder().encode(updates)
+        request.httpBody = jsonData
         
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
-        return try JSONDecoder().decode(APISuccessResponse.self, from: data)
+        return try JSONDecoder().decode(ComicResponse.self, from: data)
     }
     
-    /// Delete a comic
-    func deleteComic(id: Int, token: String) async throws -> APISuccessResponse {
+    func deleteComic(id: Int, token: String) async throws -> SuccessResponse {
         let url = URL(string: "\(baseURLString)/api/chats/comic/\(id)")!
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         if httpResponse.statusCode != 200 {
-            throw APIError.serverError(httpResponse.statusCode)
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
-        return try JSONDecoder().decode(APISuccessResponse.self, from: data)
+        return try JSONDecoder().decode(SuccessResponse.self, from: data)
     }
     
-    /// Get public comics for browsing
     func getPublicComics(
         limit: Int = 20,
         offset: Int = 0,
@@ -275,7 +306,7 @@ class APIClient {
         urlComponents.queryItems = queryItems
         
         let request = URLRequest(url: urlComponents.url!)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
@@ -289,8 +320,6 @@ class APIClient {
     }
     
     // MARK: - Image Generation
-    
-    /// Generate a single image from text prompt
     func generateImage(prompt: String) async throws -> Data {
         guard let token = await getToken() else {
             throw APIError.unauthorized
@@ -308,10 +337,10 @@ class APIClient {
         print("🖼️ Image Generation Request URL: \(urlRequest.url?.absoluteString ?? "nil")")
         print("🖼️ Request prompt: '\(prompt)'")
         
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError
+            throw APIError.invalidResponse
         }
         
         print("🖼️ Image Generation Response Status: \(httpResponse.statusCode)")
@@ -330,7 +359,6 @@ class APIClient {
         return data
     }
     
-    /// Generate image and return as base64 string for easier handling
     func generateImageAsBase64(prompt: String) async throws -> String {
         let imageData = try await generateImage(prompt: prompt)
         let base64String = imageData.base64EncodedString()
@@ -338,331 +366,483 @@ class APIClient {
         return base64String
     }
     
-    // MARK: - World-Based Comic Operations
-    
-    /// Get comics from a specific world
-    func getWorldComics(worldType: WorldType, page: Int = 1, perPage: Int = 10, favoritesOnly: Bool = false) async throws -> [ComicGenerationResponse] {
-        guard let token = await getToken() else {
-            throw APIError.unauthorized
-        }
-        
-        let request = WorldComicsRequest(
-            worldType: worldType,
-            page: page,
-            perPage: perPage,
-            favoritesOnly: favoritesOnly
-        )
-        
-        let requestData = try JSONEncoder().encode(request)
-        
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/chats/world-comics", conformingTo: .url))
+    // MARK: - World System
+    func getWorldComics(request: WorldComicsRequest, token: String) async throws -> [ComicGenerationResponse] {
+        let url = URL(string: "\(baseURLString)/api/chats/world-comics")!
+        var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        urlRequest.httpBody = requestData
         
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
         
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError
-        }
-        
-        print("📱 World Comics Response Status: \(httpResponse.statusCode)")
-        
-        if httpResponse.statusCode == 401 {
-            throw APIError.unauthorized
-        }
-        
-                guard httpResponse.statusCode == 200 else {
-            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            print("❌ World Comics Error: \(errorString)")
-            
-            // Check if it's a validation error specifically
-            if errorString.contains("panels_data") && errorString.contains("Input should be a valid dictionary") {
-                print("🔧 Backend validation error for panels_data format - returning empty array as fallback")
-                return [] // Return empty array instead of throwing error
-            }
-            
-            throw APIError.serverErrorMessage(errorString)
-        }
-
-        do {
-            let comics = try JSONDecoder().decode([ComicGenerationResponse].self, from: data)
-            print("✅ Successfully fetched \(comics.count) comics from \(worldType.displayName)")
-            return comics
-        } catch {
-            print("❌ Failed to decode world comics: \(error)")
-            let responseString = String(data: data, encoding: .utf8) ?? "No response"
-            print("📄 Raw response: \(responseString.prefix(500))...")
-            
-            // If it's a panels_data validation error, return empty array instead of crashing
-            if responseString.contains("panels_data") && responseString.contains("dict_type") {
-                print("🔧 Returning empty array due to backend validation incompatibility")
-                return []
-            }
-            
-            throw error
-        }
-    }
-    
-    /// Get statistics for a specific world
-    func getWorldStats(worldType: WorldType) async throws -> WorldStatsResponse {
-        guard let token = await getToken() else {
-            throw APIError.unauthorized
-        }
-        
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/chats/world-stats/\(worldType.rawValue)", conformingTo: .url))
-        urlRequest.httpMethod = "GET"
-        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError
+            throw APIError.invalidResponse
         }
         
-        if httpResponse.statusCode == 401 {
-            throw APIError.unauthorized
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
-        guard httpResponse.statusCode == 200 else {
-            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw APIError.serverErrorMessage(errorString)
-        }
-        
-        let stats = try JSONDecoder().decode(WorldStatsResponse.self, from: data)
-        print("✅ Successfully fetched stats for \(worldType.displayName)")
-        return stats
+        return try JSONDecoder().decode([ComicGenerationResponse].self, from: data)
     }
     
-    /// Create a new comic collection in a specific world
-    func createCollection(name: String, description: String?, worldType: WorldType) async throws -> ComicCollectionResponse {
-        guard let token = await getToken() else {
-            throw APIError.unauthorized
+    func getWorldStats(worldType: WorldType, token: String) async throws -> WorldStatsResponse {
+        let url = URL(string: "\(baseURLString)/api/chats/world-stats/\(worldType.rawValue)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
         }
         
-        let request = ComicCollectionRequest(
-            name: name,
-            description: description,
-            worldType: worldType
-        )
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
         
-        let requestData = try JSONEncoder().encode(request)
-        
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/chats/collections", conformingTo: .url))
+        return try JSONDecoder().decode(WorldStatsResponse.self, from: data)
+    }
+    
+    // MARK: - Collections
+    func createCollection(request: ComicCollectionRequest, token: String) async throws -> ComicCollectionResponse {
+        let url = URL(string: "\(baseURLString)/api/collections")!
+        var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        urlRequest.httpBody = requestData
         
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
         
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError
-        }
-        
-        if httpResponse.statusCode == 401 {
-            throw APIError.unauthorized
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw APIError.serverErrorMessage(errorString)
-        }
-        
-        let collection = try JSONDecoder().decode(ComicCollectionResponse.self, from: data)
-        print("✅ Successfully created collection '\(name)' in \(worldType.displayName)")
-        return collection
-    }
-    
-    /// Get all collections for a specific world
-    func getWorldCollections(worldType: WorldType) async throws -> [ComicCollectionResponse] {
-        guard let token = await getToken() else {
-            throw APIError.unauthorized
-        }
-        
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/chats/collections/\(worldType.rawValue)", conformingTo: .url))
-        urlRequest.httpMethod = "GET"
-        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError
+            throw APIError.invalidResponse
         }
         
-        if httpResponse.statusCode == 401 {
-            throw APIError.unauthorized
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
-        guard httpResponse.statusCode == 200 else {
-            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw APIError.serverErrorMessage(errorString)
-        }
-        
-        let collections = try JSONDecoder().decode([ComicCollectionResponse].self, from: data)
-        print("✅ Successfully fetched \(collections.count) collections from \(worldType.displayName)")
-        return collections
+        return try JSONDecoder().decode(ComicCollectionResponse.self, from: data)
     }
     
-    /// Generate comic with world assignment
-    func generateComicWithWorld(
-        title: String,
-        concept: String,
-        genre: String = "adventure",
-        artStyle: String = "comic book",
-        worldType: WorldType = .imaginationWorld
-    ) async throws -> ComicGenerationResponse {
-        guard let token = await getToken() else {
-            print("❌ No token available for comic generation")
-            print("📊 Auth Manager status: isAuthenticated = \(await AuthManager.shared.isAuthenticated)")
-            throw APIError.unauthorized
+    func getWorldCollections(worldType: WorldType, token: String) async throws -> [ComicCollectionResponse] {
+        let url = URL(string: "\(baseURLString)/api/chats/collections/\(worldType.rawValue)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
         }
         
-        print("🔑 Using token for comic generation: \(token.prefix(10))...")
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
         
-        // SIMPLIFIED: Test if the issue is token format
-        let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        print("📏 Token length after trim: \(trimmedToken.count)")
-        print("🔤 Token format check: \(trimmedToken.hasPrefix("eyJ") ? "✅ Valid JWT format" : "❌ Invalid JWT format")")
+        return try JSONDecoder().decode([ComicCollectionResponse].self, from: data)
+    }
+    
+    func addComicToCollection(collectionId: Int, comicId: Int, token: String) async throws -> SuccessResponse {
+        let url = URL(string: "\(baseURLString)/api/collections/\(collectionId)/comics/\(comicId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        // Use ComicSaveRequest for generate-comic-with-data endpoint
-        let saveRequest = ComicSaveRequest(
-            title: title,
-            concept: concept,
-            genre: genre,
-            artStyle: artStyle,
-            worldType: worldType,
-            imageBase64: "", // Empty for generation
-            panelsData: "", // Empty for generation
-            isFavorite: false,
-            isPublic: false
-        )
+        let (data, response) = try await session.data(for: request)
         
-        let requestData = try JSONEncoder().encode(saveRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
         
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/chats/generate-comic-with-data", conformingTo: .url))
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(SuccessResponse.self, from: data)
+    }
+    
+    // MARK: - Scenarios
+    func saveScenario(request: ScenarioSaveRequest, token: String) async throws -> ScenarioSaveResponse {
+        let url = URL(string: "\(baseURLString)/api/chats/scenarios")!
+        var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(trimmedToken)", forHTTPHeaderField: "Authorization")
-        urlRequest.httpBody = requestData
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        print("🌐 Request URL: \(urlRequest.url?.absoluteString ?? "nil")")
-        print("📤 Request Headers: \(urlRequest.allHTTPHeaderFields ?? [:])")
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
         
-        // Debug: Check the concept length being sent
-        print("🔍 Concept being sent to backend: '\(concept.prefix(100))...'")
-        print("🔍 Concept length being sent: \(concept.count) characters")
-        
-        if let bodyString = String(data: requestData, encoding: .utf8) {
-            print("📦 Request Body preview: \(String(bodyString.prefix(200)))...")
-            print("📏 Request Body Length: \(bodyString.count) characters")
-        }
-        
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError
+            throw APIError.invalidResponse
         }
         
-        print("📱 Comic Generation Response Status: \(httpResponse.statusCode)")
-        print("📋 Response Headers: \(httpResponse.allHeaderFields)")
-        
-        if httpResponse.statusCode == 401 {
-            let errorString = String(data: data, encoding: .utf8) ?? "No error details"
-            print("🔐 401 UNAUTHORIZED ERROR!")
-            print("📋 Backend says: \(errorString)")
-            print("🌐 Requested URL: \(urlRequest.url?.absoluteString ?? "nil")")
-            print("🔑 Auth header: Bearer [token-\(trimmedToken.count)-chars]")
-            
-            // Try to decode the error response
-            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                print("📊 Detailed error: \(json)")
-            }
-            
-            throw APIError.unauthorized
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
-        guard httpResponse.statusCode == 200 else {
-            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            print("❌ Comic Generation Error: \(errorString)")
-            throw APIError.serverErrorMessage(errorString)
+        return try JSONDecoder().decode(ScenarioSaveResponse.self, from: data)
+    }
+    
+    func getScenarioByComic(comicId: Int, token: String) async throws -> DetailedScenario {
+        let url = URL(string: "\(baseURLString)/api/chats/scenarios/comic/\(comicId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
         }
         
-        // Debug: Print the actual response data
-        let responseString = String(data: data, encoding: .utf8) ?? "Unable to convert to string"
-        print("📥 Raw Response Data: '\(responseString)'")
-        print("📏 Response Data Length: \(data.count) bytes")
-        
-        // Check if response is empty
-        if data.isEmpty {
-            print("⚠️ Backend returned empty response!")
-            // Create a basic response for empty data
-            let basicComic = ComicGenerationResponse(
-                title: title,
-                concept: concept,
-                genre: genre,
-                artStyle: artStyle,
-                worldType: worldType,
-                imageBase64: "",
-                panelsData: "{\"panel1\":{\"description\":\"Generated comic panel\",\"dialogue\":\"" + concept.prefix(50) + "...\"}}",
-                createdAt: ISO8601DateFormatter().string(from: Date())
-            )
-            
-            print("✅ Created comic response for empty backend response")
-            return basicComic
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
         
-        do {
-            // First, try to decode as ComicGenerationResponse
-            let comic = try JSONDecoder().decode(ComicGenerationResponse.self, from: data)
-            print("✅ Successfully decoded ComicGenerationResponse")
-            print("✅ Successfully generated comic '\(comic.title)' for \(worldType.displayName)")
-            print("📊 Comic data - imageBase64 length: \(comic.imageBase64.count)")
-            print("📊 Comic data - panelsData: \(comic.panelsData)")
-            return comic
-        } catch {
-            print("❌ Failed to decode ComicGenerationResponse: \(error)")
-            print("🔍 Trying to parse as raw JSON...")
-            if let jsonObject = try? JSONSerialization.jsonObject(with: data) {
-                print("🔍 Raw JSON structure: \(jsonObject)")
-            }
-            if let responseString = String(data: data, encoding: .utf8) {
-                print("📄 Response that failed to decode: \(responseString.prefix(500))...")
-            }
-            
-            // Check what type of response we got
-            if responseString.lowercased().contains("<html") {
-                print("🌐 Backend returned HTML page (probably error page)")
-            } else if responseString.contains("Internal Server Error") {
-                print("💥 Backend returned server error")
-            } else if responseString.contains("success") || responseString.contains("generated") {
-                print("✅ Backend returned success message (but not JSON)")
-            } else {
-                print("❓ Backend returned unknown format: \(responseString.prefix(100))...")
-            }
-            
-            // Try to create a fallback response regardless of format
-            print("🔧 Creating fallback comic response...")
-            let fallbackComic = ComicGenerationResponse(
-                title: title,
-                concept: concept,
-                genre: genre,
-                artStyle: artStyle,
-                worldType: worldType,
-                imageBase64: "",
-                panelsData: "{\"panel1\":{\"description\":\"Generated comic panel\",\"dialogue\":\"" + concept.prefix(50) + "...\"}}",
-                createdAt: ISO8601DateFormatter().string(from: Date())
-            )
-            
-            print("✅ Created fallback comic response successfully")
-            return fallbackComic
+        return try JSONDecoder().decode(DetailedScenario.self, from: data)
+    }
+    
+    func getUserScenarios(limit: Int, offset: Int, token: String) async throws -> [DetailedScenario] {
+        var urlComponents = URLComponents(string: "\(baseURLString)/api/chats/scenarios")!
+        urlComponents.queryItems = [
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "offset", value: String(offset))
+        ]
+        
+        var request = URLRequest(url: urlComponents.url!)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode([DetailedScenario].self, from: data)
+    }
+    
+    // MARK: - Testing (No Auth Required)
+    func testGenerateComic(request: ComicRequest) async throws -> Data {
+        let url = URL(string: "\(baseURLString)/api/test/generate-comic")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return data
+    }
+    
+    func testHealth() async throws -> HealthResponse {
+        let url = URL(string: "\(baseURLString)/api/test/health")!
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(HealthResponse.self, from: data)
+    }
+    
+    // MARK: - Utility
+    func getAvailableGenres() async throws -> [String] {
+        let url = URL(string: "\(baseURLString)/api/utils/genres")!
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode([String].self, from: data)
+    }
+    
+    func getAvailableArtStyles() async throws -> [String] {
+        let url = URL(string: "\(baseURLString)/api/utils/art-styles")!
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode([String].self, from: data)
+    }
+    
+    // MARK: - Storage Integration
+    func uploadToStorage(request: StorageUploadRequest, token: String) async throws -> StorageUploadResponse {
+        let url = URL(string: "\(baseURLString)/api/storage/upload")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(StorageUploadResponse.self, from: data)
+    }
+    
+    func downloadFromStorage(url: String, token: String) async throws -> Data {
+        guard let downloadURL = URL(string: url) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: downloadURL)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return data
+    }
+    
+    func deleteFromStorage(url: String, token: String) async throws {
+        let deleteURL = URL(string: "\(baseURLString)/api/storage/delete")!
+        var request = URLRequest(url: deleteURL)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let body = ["url": url]
+        let jsonData = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
         }
     }
     
-    // MARK: - Legacy Comic Methods (for backwards compatibility)
+    func getStorageUsage(token: String) async throws -> StorageUsage {
+        let url = URL(string: "\(baseURLString)/api/storage/usage")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(StorageUsage.self, from: data)
+    }
     
-    /// Generate scenario only (without images)
+    func cleanupStorage(token: String) async throws -> StorageCleanupResult {
+        let url = URL(string: "\(baseURLString)/api/storage/cleanup")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(StorageCleanupResult.self, from: data)
+    }
+    
+    func optimizeStorage(token: String) async throws -> StorageOptimizationResult {
+        let url = URL(string: "\(baseURLString)/api/storage/optimize")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(StorageOptimizationResult.self, from: data)
+    }
+    
+    // MARK: - File Upload and Download
+    func uploadFile(request: StorageUploadRequest, token: String) async throws -> StorageUploadResponse {
+        let url = URL(string: "\(baseURLString)/api/storage/upload")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(StorageUploadResponse.self, from: data)
+    }
+    
+    func downloadFile(url: String, token: String) async throws -> Data {
+        guard let downloadURL = URL(string: url) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: downloadURL)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return data
+    }
+    
+    func deleteFile(url: String, token: String) async throws {
+        let url = URL(string: "\(baseURLString)/api/storage/delete")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let body = ["url": url]
+        let jsonData = try JSONEncoder().encode(body)
+        request.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+    }
+    
+    func deleteFiles(comicId: Int, token: String) async throws {
+        let url = URL(string: "\(baseURLString)/api/storage/delete-comic-files")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let body = ["comic_id": comicId]
+        let jsonData = try JSONEncoder().encode(body)
+        request.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+    }
+    
+    // MARK: - Legacy Methods (for backwards compatibility)
     func generateScenario(message: String) async throws -> ScenarioResponse {
         guard let token = await getToken() else {
             throw APIError.unauthorized
@@ -678,44 +858,23 @@ class APIClient {
         let jsonData = try JSONEncoder().encode(body)
         request.httpBody = jsonData
         
-        print("📝 Scenario Request URL: \(url.absoluteString)")
-        print("📤 Scenario Request Body: \(String(data: jsonData, encoding: .utf8) ?? "nil")")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
-        print("📱 Scenario Response Status: \(httpResponse.statusCode)")
-        print("📋 Scenario Response Headers: \(httpResponse.allHeaderFields)")
-        print("📥 Raw Scenario Response Data: '\(String(data: data, encoding: .utf8) ?? "nil")'")
-        print("📏 Scenario Response Data Length: \(data.count) bytes")
-        
         if httpResponse.statusCode != 200 {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            print("❌ Scenario Generation Error: \(errorString)")
             throw APIError.serverError(httpResponse.statusCode)
         }
         
-        do {
-            let scenarioResponse = try JSONDecoder().decode(ScenarioResponse.self, from: data)
-            print("✅ Scenario decoded successfully: \(scenarioResponse.scenario.prefix(100))...")
-            return scenarioResponse
-        } catch {
-            print("❌ Failed to decode ScenarioResponse: \(error)")
-            print("🔍 Trying to parse as raw JSON...")
-            if let jsonObject = try? JSONSerialization.jsonObject(with: data) {
-                print("🔍 Raw JSON structure: \(jsonObject)")
-            }
-            throw error
-        }
+        return try JSONDecoder().decode(ScenarioResponse.self, from: data)
     }
     
-    // MARK: - Utility
     func healthCheck() async throws -> HealthResponse {
         let url = URL(string: "\(baseURLString)/health")!
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
@@ -730,7 +889,7 @@ class APIClient {
     
     func getIOSConfig() async throws -> IOSConfigResponse {
         let url = URL(string: "\(baseURLString)/api/ios/config")!
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
@@ -742,38 +901,154 @@ class APIClient {
         
         return try JSONDecoder().decode(IOSConfigResponse.self, from: data)
     }
-}
-
-// MARK: - API Errors
-enum APIError: Error, LocalizedError {
-    case invalidResponse
-    case serverError(Int)
-    case serverErrorMessage(String)
-    case decodingError
-    case networkError
-    case unauthorized
-    case notFound
-    case forbidden
     
-    var errorDescription: String? {
-        switch self {
-        case .invalidResponse:
-            return "Invalid response from server"
-        case .serverError(let code):
-            return "Server error with status code: \(code)"
-        case .serverErrorMessage(let message):
-            return "Server error: \(message)"
-        case .decodingError:
-            return "Failed to decode response"
-        case .networkError:
-            return "Network connection error"
-        case .unauthorized:
-            return "Unauthorized access - please log in"
-        case .notFound:
-            return "Resource not found"
-        case .forbidden:
-            return "Access forbidden"
+    func getWorldPreferences(worldType: WorldType, token: String) async throws -> WorldPreferences {
+        let url = URL(string: "\(baseURLString)/api/chats/world-preferences/\(worldType.rawValue)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
         }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(WorldPreferences.self, from: data)
+    }
+    
+    // MARK: - Collection Management Methods
+    func searchCollections(request: CollectionSearchRequest, token: String) async throws -> [ComicCollectionResponse] {
+        let url = URL(string: "\(baseURLString)/api/collections/search")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode([ComicCollectionResponse].self, from: data)
+    }
+    
+    func getCollectionStats(token: String) async throws -> CollectionStats {
+        let url = URL(string: "\(baseURLString)/api/collections/stats")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(CollectionStats.self, from: data)
+    }
+    
+    func updateCollection(id: Int, updates: CollectionUpdateRequest, token: String) async throws -> ComicCollectionResponse {
+        let url = URL(string: "\(baseURLString)/api/collections/\(id)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "PUT"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(updates)
+        urlRequest.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(ComicCollectionResponse.self, from: data)
+    }
+    
+    func deleteCollection(id: Int, token: String) async throws {
+        let url = URL(string: "\(baseURLString)/api/collections/\(id)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+    }
+    
+    func removeComicFromCollection(collectionId: Int, comicId: Int, token: String) async throws {
+        let url = URL(string: "\(baseURLString)/api/collections/\(collectionId)/comics/\(comicId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+    }
+    
+    func shareCollection(request: CollectionShareRequest, token: String) async throws -> CollectionShareResponse {
+        let url = URL(string: "\(baseURLString)/api/collections/share")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(request)
+        urlRequest.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(CollectionShareResponse.self, from: data)
     }
 }
 
@@ -785,33 +1060,79 @@ extension APIClient {
         concept: String,
         genre: String,
         artStyle: String,
+        worldType: WorldType = .imaginationWorld,
         isFavorite: Bool = false,
         isPublic: Bool = false,
         token: String
-    ) async throws -> Comic {
+    ) async throws -> ComicGenerationResponse {
         let request = ComicSaveRequest(
             title: title,
             concept: concept,
             genre: genre,
             artStyle: artStyle,
-            worldType: .imaginationWorld,
-            imageBase64: "",
-            panelsData: "[]",
+            worldType: worldType,
+            includeDetailedScenario: false,
+            imageBase64: nil,
+            panelsData: nil,
             isFavorite: isFavorite,
             isPublic: isPublic
         )
         
-        let response = try await generateComicWithData(request: request, token: token)
-        return Comic(from: response)
+        return try await generateComicWithData(request: request, token: token)
     }
     
     /// Toggle favorite status of a comic
-    func toggleFavorite(comicId: Int, currentStatus: Bool, token: String) async throws -> APISuccessResponse {
-        return try await updateComic(id: comicId, isFavorite: !currentStatus, token: token)
+    func toggleFavorite(comicId: Int, currentStatus: Bool, token: String) async throws -> ComicResponse {
+        let updates = ComicUpdateRequest(title: nil, isFavorite: !currentStatus, isPublic: nil)
+        return try await updateComic(id: comicId, updates: updates, token: token)
     }
     
     /// Toggle public status of a comic
-    func togglePublic(comicId: Int, currentStatus: Bool, token: String) async throws -> APISuccessResponse {
-        return try await updateComic(id: comicId, isPublic: !currentStatus, token: token)
+    func togglePublic(comicId: Int, currentStatus: Bool, token: String) async throws -> ComicResponse {
+        let updates = ComicUpdateRequest(title: nil, isFavorite: nil, isPublic: !currentStatus)
+        return try await updateComic(id: comicId, updates: updates, token: token)
+    }
+    
+    // MARK: - Missing World Methods
+    func getWorldAnalytics(worldType: WorldType, token: String) async throws -> WorldAnalytics {
+        let url = URL(string: "\(baseURLString)/api/chats/world-analytics/\(worldType.rawValue)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
+        
+        return try JSONDecoder().decode(WorldAnalytics.self, from: data)
+    }
+    
+    func saveWorldPreferences(_ preferences: WorldPreferences, token: String) async throws {
+        let url = URL(string: "\(baseURLString)/api/chats/world-preferences")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let jsonData = try JSONEncoder().encode(preferences)
+        request.httpBody = jsonData
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode != 200 {
+            let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
+            throw errorData
+        }
     }
 } 

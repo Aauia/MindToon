@@ -141,6 +141,43 @@ struct ComicGeneratorView: View {
                             .padding(.horizontal)
                         }
 
+                        // Detailed Scenario Toggle Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Advanced Options")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "text.book.closed.fill")
+                                        .foregroundColor(.purple)
+                                        .font(.title3)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Include Detailed Scenario")
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.primary)
+                                        Text("Generate a rich, detailed story with character development and plot structure")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.leading)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Toggle("", isOn: $viewModel.includeDetailedScenario)
+                                        .toggleStyle(SwitchToggleStyle(tint: .purple))
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            }
+                            .padding(.horizontal)
+                        }
+
                         // Large Script Text Input Area
                         TextEditor(text: $viewModel.scriptText)
                             .frame(minHeight: 200, maxHeight: .infinity) // Flexible height with a minimum
@@ -378,4 +415,22 @@ struct ActionButton: View {
 // MARK: - Preview
 #Preview {
     ComicGeneratorView(viewModel: ComicGeneratorViewModel(), navigation: NavigationViewModel())
+}
+
+extension WorldType {
+    var gradient: Gradient {
+        switch self {
+        case .dreamWorld: return Gradient(colors: [.purple.opacity(0.3), .blue.opacity(0.3)])
+        case .mindWorld: return Gradient(colors: [.indigo.opacity(0.3), .cyan.opacity(0.3)])
+        case .imaginationWorld: return Gradient(colors: [.pink.opacity(0.3), .orange.opacity(0.3)])
+        }
+    }
+
+    var linearGradient: LinearGradient {
+        LinearGradient(
+            gradient: self.gradient,
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
 }

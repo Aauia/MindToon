@@ -29,6 +29,22 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
 
+class UserDeletionConfirmation(SQLModel):
+    """Schema for confirming account deletion - requires explicit confirmation"""
+    confirm_deletion: bool = Field(description="Must be true to confirm deletion")
+    username_confirmation: str = Field(description="Must match the user's username exactly")
+    understanding_acknowledgment: str = Field(
+        description="Must be exactly 'I understand this action is permanent and irreversible'"
+    )
+
+class UserDeletionSummary(SQLModel):
+    """Summary of what was deleted"""
+    success: bool
+    username: str
+    message: str
+    deletion_summary: dict
+    warning: str
+
 class Token(SQLModel):
     access_token: str
     token_type: str

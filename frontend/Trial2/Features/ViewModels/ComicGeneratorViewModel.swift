@@ -1,14 +1,24 @@
 import Foundation
 import Combine // Import Combine for @Published and PassthroughSubject
 
-// MARK: - ComicGeneratorViewModel
+// MARK: - Enhanced ComicGeneratorViewModel
 @MainActor
 class ComicGeneratorViewModel: ObservableObject {
     @Published var comicTitle: String = ""
     @Published var scriptText: String = ""
+    @Published var selectedGenre: String = "adventure"
+    @Published var selectedArtStyle: String = "comic book"
+    @Published var selectedWorld: WorldType = .imaginationWorld
+    @Published var includeDetailedScenario: Bool = false
     @Published var isLoading: Bool = false
-    @Published var errorMessage: String? = nil
+    @Published var errorMessage: String?
     @Published var generatedComic: ComicGenerationResponse?
+    
+    // New properties for enhanced features
+    @Published var availableGenres: [String] = []
+    @Published var availableArtStyles: [String] = []
+    @Published var isWorldSelectionPresented: Bool = false
+    @Published var showAdvancedOptions: Bool = false
     @Published var genre: String = "adventure"
     @Published var artStyle: String = "comic book"
 
@@ -19,10 +29,29 @@ class ComicGeneratorViewModel: ObservableObject {
     var didGenerateComicPublisher: AnyPublisher<ComicGenerationResponse, Never> {
         didGenerateComicSubject.eraseToAnyPublisher()
     }
+    
+    init() {
+        Task {
+            await loadAvailableOptions()
+        }
+    }
 
-    // MARK: - Methods
+    // MARK: - Enhanced Methods
     func generateComic() async {
-        await generateComicWithWorld(worldType: .imaginationWorld)
+        await generateComicWithWorld(worldType: selectedWorld)
+    }
+    
+    // MARK: - Load Available Options
+    private func loadAvailableOptions() async {
+        do {
+            availableGenres = try await apiClient.getAvailableGenres()
+            availableArtStyles = try await apiClient.getAvailableArtStyles()
+        } catch {
+            print("❌ Failed to load available options: \(error)")
+            // Use default options if API fails
+            availableGenres = ["adventure", "comedy", "horror", "romance", "sci-fi", "fantasy", "mystery", "drama", "action", "slice of life"]
+            availableArtStyles = ["comic book", "manga", "cartoon", "realistic", "watercolor", "sketch", "pixel art", "minimalist", "vintage", "anime"]
+        }
     }
     
     func generateComicWithWorld(worldType: WorldType) async {
@@ -38,26 +67,29 @@ class ComicGeneratorViewModel: ObservableObject {
             print("🎨 Generating comic '\(comicTitle)' for \(worldType.displayName)...")
             
             // First, enhance the script with scenario generation
-            print("📝 Enhancing script with AI scenario generation...")
-            var finalScript = scriptText
+            // print("📝 Enhancing script with AI scenario generation...")
+            // var finalScript = scriptText
+            //
+            // do {
+            //     let scenarioResponse = try await apiClient.generateScenario(message: scriptText)
+            //     finalScript = scenarioResponse.scenario
+            //     print("✨ Enhanced script: \(finalScript.prefix(100))...")
+            //     print("🎭 Detected genre: \(scenarioResponse.genre)")
+            //     
+            //     // Update genre if backend suggests something different
+            //     if selectedGenre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
+            //         selectedGenre = scenarioResponse.genre.lowercased()
+            //         print("🎭 Updated genre to: \(selectedGenre)")
+            //     }
+            //     
+            // } catch {
+            //     print("❌ Scenario generation failed, using original script...")
+            //     print("🔄 Scenario error: \(error)")
+            //     // Continue with original script
+            // }
             
-            do {
-                let scenarioResponse = try await apiClient.generateScenario(message: scriptText)
-                finalScript = scenarioResponse.scenario
-                print("✨ Enhanced script: \(finalScript.prefix(100))...")
-                print("🎭 Detected genre: \(scenarioResponse.genre)")
-                
-                // Update genre if backend suggests something different
-                if genre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
-                    genre = scenarioResponse.genre.lowercased()
-                    print("🎭 Updated genre to: \(genre)")
-                }
-                
-            } catch {
-                print("❌ Scenario generation failed, using original script...")
-                print("🔄 Scenario error: \(error)")
-                // Continue with original script
-            }
+            // Use only the concept (scriptText) for now
+            let finalScript = scriptText
             
             print("🎨 Starting comic generation...")
             print("📝 Original script length: \(finalScript.count) characters")
@@ -80,13 +112,25 @@ class ComicGeneratorViewModel: ObservableObject {
             
             print("🎨 About to send to backend with concept length: \(truncatedConcept.count)")
             
-            let comic = try await apiClient.generateComicWithWorld(
+            let saveRequest = ComicSaveRequest(
                 title: comicTitle,
-                concept: truncatedConcept, // Use truncated version for backend
-                genre: genre,
-                artStyle: artStyle,
-                worldType: worldType
+                concept: truncatedConcept,
+                genre: selectedGenre,
+                artStyle: selectedArtStyle,
+                worldType: worldType,
+                includeDetailedScenario: includeDetailedScenario,
+                imageBase64: "", // Always include as empty string
+                panelsData: nil,
+                isFavorite: nil,
+                isPublic: nil
             )
+            
+            let token = await AuthManager.shared.getStoredToken()
+            guard let token = token else {
+                throw APIError.unauthorized
+            }
+            
+            let comic = try await apiClient.generateComicWithData(request: saveRequest, token: token)
             
             generatedComic = comic
             didGenerateComicSubject.send(comic)
@@ -135,9 +179,9 @@ class ComicGeneratorViewModel: ObservableObject {
             scriptText = enhancedScript
             
             // Also update genre if the backend suggests one and we don't have a specific one set
-            if genre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
-                genre = scenarioResponse.genre.lowercased()
-                print("🎭 Updated genre to: \(genre)")
+            if selectedGenre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
+                selectedGenre = scenarioResponse.genre.lowercased()
+                print("🎭 Updated genre to: \(selectedGenre)")
             }
             
             errorMessage = "✅ Scenario enhanced! Genre detected: \(scenarioResponse.genre)"
@@ -172,8 +216,11 @@ class ComicGeneratorViewModel: ObservableObject {
         scriptText = ""
         errorMessage = nil
         generatedComic = nil
-        genre = "adventure"
-        artStyle = "comic book"
+        selectedGenre = "adventure"
+        selectedArtStyle = "comic book"
+        selectedWorld = .imaginationWorld
+        includeDetailedScenario = false
+        showAdvancedOptions = false
     }
 
     private func determineGenre() -> String {
@@ -195,6 +242,129 @@ class ComicGeneratorViewModel: ObservableObject {
             return "mystery"
         } else {
             return "adventure" // default
+        }
+    }
+    
+    // MARK: - World-Aware Generation
+    func generateWithWorldContext() async {
+        // Enhance script based on selected world
+        let worldContext = selectedWorld.detailedDescription
+        let enhancedScript = "\(scriptText)\n\nWorld Context: \(worldContext)"
+        
+        let originalScript = scriptText
+        scriptText = enhancedScript
+        
+        await generateComic()
+        
+        // Restore original script
+        scriptText = originalScript
+    }
+    
+    // MARK: - Quick Generation Presets
+    func generateWithPreset(_ preset: ComicPreset) async {
+        comicTitle = preset.title
+        scriptText = preset.concept
+        selectedGenre = preset.genre
+        selectedArtStyle = preset.artStyle
+        selectedWorld = preset.worldType
+        includeDetailedScenario = preset.includeDetailedScenario
+        
+        await generateComic()
+    }
+    
+    // MARK: - Validation
+    var canGenerate: Bool {
+        !comicTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !scriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !isLoading
+    }
+    
+    var formCompletionPercentage: Double {
+        var completedFields = 0
+        let totalFields = 6
+        
+        if !comicTitle.isEmpty { completedFields += 1 }
+        if !scriptText.isEmpty { completedFields += 1 }
+        if !selectedGenre.isEmpty { completedFields += 1 }
+        if !selectedArtStyle.isEmpty { completedFields += 1 }
+        completedFields += 1 // selectedWorld always has a value
+        if includeDetailedScenario { completedFields += 1 }
+        
+        return Double(completedFields) / Double(totalFields)
+    }
+}
+
+// MARK: - Comic Generation Presets
+struct ComicPreset {
+    let title: String
+    let concept: String
+    let genre: String
+    let artStyle: String
+    let worldType: WorldType
+    let includeDetailedScenario: Bool
+    
+    static let dreamWorldPresets: [ComicPreset] = [
+        ComicPreset(
+            title: "The Floating City",
+            concept: "A city where gravity works in reverse and people walk on clouds",
+            genre: "fantasy",
+            artStyle: "watercolor",
+            worldType: .dreamWorld,
+            includeDetailedScenario: true
+        ),
+        ComicPreset(
+            title: "Mirror Memories",
+            concept: "Each mirror shows a different version of your past",
+            genre: "mystery",
+            artStyle: "noir",
+            worldType: .dreamWorld,
+            includeDetailedScenario: true
+        )
+    ]
+    
+    static let mindWorldPresets: [ComicPreset] = [
+        ComicPreset(
+            title: "The Decision Council",
+            concept: "Inside someone's mind, different emotions debate a major life choice",
+            genre: "drama",
+            artStyle: "minimalist",
+            worldType: .mindWorld,
+            includeDetailedScenario: true
+        ),
+        ComicPreset(
+            title: "Memory Lane",
+            concept: "A journey through someone's memories to find a lost childhood moment",
+            genre: "adventure",
+            artStyle: "sketch",
+            worldType: .mindWorld,
+            includeDetailedScenario: true
+        )
+    ]
+    
+    static let imaginationWorldPresets: [ComicPreset] = [
+        ComicPreset(
+            title: "Space Pirates",
+            concept: "A crew of pirates sailing through asteroid fields in search of cosmic treasure",
+            genre: "adventure",
+            artStyle: "comic book",
+            worldType: .imaginationWorld,
+            includeDetailedScenario: false
+        ),
+        ComicPreset(
+            title: "Dragon Academy",
+            concept: "Young wizards learning to train and ride dragons",
+            genre: "fantasy",
+            artStyle: "cartoon",
+            worldType: .imaginationWorld,
+            includeDetailedScenario: false
+        )
+    ]
+    
+    static func presetsForWorld(_ worldType: WorldType) -> [ComicPreset] {
+        switch worldType {
+        case .dreamWorld: return dreamWorldPresets
+        case .mindWorld: return mindWorldPresets
+        case .imaginationWorld: return imaginationWorldPresets
         }
     }
 }

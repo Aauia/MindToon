@@ -11,6 +11,11 @@ class ProfileViewModel: ObservableObject {
     @Published var profileImageUrl: URL? = nil
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
+    
+    // MARK: - Account Deletion Properties (New)
+    @Published var showingAccountDeletion = false
+    @Published var isDeletingAccount = false
+    @Published var deletionSummary: DeletionSummary? = nil
 
     private let authManager = AuthManager.shared
 
@@ -97,6 +102,57 @@ class ProfileViewModel: ObservableObject {
         
         isLoading = false
         print("User logged out successfully.")
+    }
+    
+    // MARK: - Account Deletion Methods (New functionality)
+    
+    /// Shows the account deletion confirmation dialog
+    func showAccountDeletion() {
+        showingAccountDeletion = true
+    }
+    
+    /// Hides the account deletion dialog
+    func hideAccountDeletion() {
+        showingAccountDeletion = false
+        deletionSummary = nil
+        errorMessage = nil
+    }
+    
+    /// Deletes the user account with confirmation
+    func deleteAccount(usernameConfirmation: String, navigation: NavigationViewModel) async {
+        guard !usernameConfirmation.isEmpty else {
+            errorMessage = "Please enter your username to confirm deletion"
+            return
+        }
+        
+        guard usernameConfirmation == userName else {
+            errorMessage = "Username confirmation does not match your actual username"
+            return
+        }
+        
+        isDeletingAccount = true
+        errorMessage = nil
+        
+        do {
+            let summary = try await authManager.deleteAccount(usernameConfirmation: usernameConfirmation)
+            deletionSummary = summary
+            
+            // Clear local profile data
+            userName = ""
+            userEmail = ""
+            userFullName = ""
+            
+            print("✅ Account successfully deleted: \(summary?.username ?? "")")
+            
+            // Log out and navigate to welcome screen
+            authManager.logout()
+            navigation.currentScreen = .welcome
+        } catch {
+            errorMessage = error.localizedDescription
+            print("❌ Account deletion failed: \(error.localizedDescription)")
+        }
+        
+        isDeletingAccount = false
     }
     
     /// Clears any error messages

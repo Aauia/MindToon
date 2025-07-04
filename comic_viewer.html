@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindToon Comic Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .comics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        .comic-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+        .comic-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .comic-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .comic-concept {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            max-height: 60px;
+            overflow: hidden;
+        }
+        .comic-meta {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+        .config-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        .config-input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 MindToon Comic Viewer</h1>
+        <p>View your saved comics from Supabase</p>
+    </div>
+
+    <div class="config-section">
+        <h3>📡 Supabase Configuration</h3>
+        <input type="text" 
+               id="supabaseUrl" 
+               class="config-input" 
+               placeholder="Supabase URL (e.g., https://your-project.supabase.co)"
+               value="https://gpmctnhcanlqrmpyrlyg.supabase.co">
+        <input type="password" 
+               id="supabaseKey" 
+               class="config-input" 
+               placeholder="Supabase Anon Key">
+        <button class="btn" onclick="loadComics()">🔄 Load Comics</button>
+        <button class="btn" onclick="toggleConfig()">⚙️ Toggle Config</button>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <p>📚 Loading your comics...</p>
+    </div>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="comicsContainer" class="comics-grid"></div>
+
+    <script>
+        // Toggle configuration visibility
+        function toggleConfig() {
+            const config = document.querySelector('.config-section');
+            config.style.display = config.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Load comics from Supabase
+        async function loadComics() {
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const supabaseKey = document.getElementById('supabaseKey').value;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                showError('Please enter both Supabase URL and API Key');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('comicsContainer').innerHTML = '';
+
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/comicspage?select=*&order=created_at.desc&limit=20`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const comics = await response.json();
+                displayComics(comics);
+
+            } catch (error) {
+                showError(`Failed to load comics: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Display comics in the grid
+        function displayComics(comics) {
+            const container = document.getElementById('comicsContainer');
+            
+            if (comics.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No comics found. Create some comics first!</p>';
+                return;
+            }
+
+            container.innerHTML = comics.map(comic => `
+                <div class="comic-card">
+                    ${comic.image_base64 ? 
+                        `<img src="data:image/png;base64,${comic.image_base64}" 
+                              class="comic-image" 
+                              alt="${comic.title}"
+                              onerror="this.style.display='none'">` : 
+                        '<div style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666;">No Image</div>'
+                    }
+                    <div class="comic-title">${comic.title || 'Untitled Comic'}</div>
+                    <div class="comic-concept">${comic.concept || 'No description'}</div>
+                    <div class="comic-meta">
+                        <span>📅 ${new Date(comic.created_at).toLocaleDateString()}</span>
+                        <span>🎭 ${comic.genre || 'Unknown'}</span>
+                        <span>🎨 ${comic.art_style || 'Default'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Auto-hide config after initial setup
+        setTimeout(() => {
+            document.querySelector('.config-section').style.display = 'none';
+        }, 3000);
+    </script>
+</body>
+</html> 
