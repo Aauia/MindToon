@@ -19,8 +19,6 @@ class ComicGeneratorViewModel: ObservableObject {
     @Published var availableArtStyles: [String] = []
     @Published var isWorldSelectionPresented: Bool = false
     @Published var showAdvancedOptions: Bool = false
-    @Published var genre: String = "adventure"
-    @Published var artStyle: String = "comic book"
 
     private let apiClient = APIClient.shared
     private let didGenerateComicSubject = PassthroughSubject<ComicGenerationResponse, Never>()
@@ -66,41 +64,39 @@ class ComicGeneratorViewModel: ObservableObject {
         do {
             print("🎨 Generating comic '\(comicTitle)' for \(worldType.displayName)...")
             
-            // First, enhance the script with scenario generation
-            // print("📝 Enhancing script with AI scenario generation...")
-            // var finalScript = scriptText
-            //
-            // do {
-            //     let scenarioResponse = try await apiClient.generateScenario(message: scriptText)
-            //     finalScript = scenarioResponse.scenario
-            //     print("✨ Enhanced script: \(finalScript.prefix(100))...")
-            //     print("🎭 Detected genre: \(scenarioResponse.genre)")
-            //     
-            //     // Update genre if backend suggests something different
-            //     if selectedGenre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
-            //         selectedGenre = scenarioResponse.genre.lowercased()
-            //         print("🎭 Updated genre to: \(selectedGenre)")
-            //     }
-            //     
-            // } catch {
-            //     print("❌ Scenario generation failed, using original script...")
-            //     print("🔄 Scenario error: \(error)")
-            //     // Continue with original script
-            // }
-            
-            // Use only the concept (scriptText) for now
-            let finalScript = scriptText
+            var finalScript = scriptText
+            var genreToUse = selectedGenre
+            var artStyleToUse = selectedArtStyle
+
+            if includeDetailedScenario {
+                print("📝 Enhancing script with AI scenario generation...")
+                do {
+                    let token = try await AuthManager.shared.validateAndGetToken()
+                    let scenarioResponse = try await apiClient.generateScenario(message: scriptText)
+                    finalScript = scenarioResponse.scenario
+                    print("✨ Enhanced script: \(finalScript.prefix(100))...")
+                    print("🎭 Detected genre: \(scenarioResponse.genre)")
+                    // Always use the user's selected genre and art style
+                    // genreToUse = selectedGenre
+                    // artStyleToUse = selectedArtStyle
+                    print("🎨 Using user-selected genre: \(selectedGenre)")
+                    print("🎨 Using user-selected art style: \(selectedArtStyle)")
+                } catch {
+                    print("❌ Scenario generation failed, using original script...")
+                    print("🔄 Scenario error: \(error)")
+                    // Keep original script and user's genre/art style selection
+                }
+            }
             
             print("🎨 Starting comic generation...")
-            print("📝 Original script length: \(finalScript.count) characters")
-            print("📝 Original script preview: \(String(finalScript.prefix(100)))...")
+            print("📝 Script length: \(finalScript.count) characters")
+            print("📝 Script preview: \(String(finalScript.prefix(100)))...")
             
             // AGGRESSIVE truncation for database constraint (1000 chars max)
             let maxConceptLength = 800 // Much smaller buffer to be safe
             let truncatedConcept: String
             
             if finalScript.count > maxConceptLength {
-                // More aggressive truncation
                 let truncated = String(finalScript.prefix(maxConceptLength))
                 truncatedConcept = truncated + "... [truncated for database]"
                 print("✂️ TRUNCATED: Original \(finalScript.count) chars → Truncated \(truncatedConcept.count) chars")
@@ -115,8 +111,8 @@ class ComicGeneratorViewModel: ObservableObject {
             let saveRequest = ComicSaveRequest(
                 title: comicTitle,
                 concept: truncatedConcept,
-                genre: selectedGenre,
-                artStyle: selectedArtStyle,
+                genre: genreToUse,
+                artStyle: artStyleToUse,
                 worldType: worldType,
                 includeDetailedScenario: includeDetailedScenario,
                 imageBase64: "", // Always include as empty string
@@ -125,10 +121,7 @@ class ComicGeneratorViewModel: ObservableObject {
                 isPublic: nil
             )
             
-            let token = await AuthManager.shared.getStoredToken()
-            guard let token = token else {
-                throw APIError.unauthorized
-            }
+            let token = try await AuthManager.shared.validateAndGetToken()
             
             let comic = try await apiClient.generateComicWithData(request: saveRequest, token: token)
             

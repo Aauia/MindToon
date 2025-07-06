@@ -445,6 +445,7 @@ struct ComicViewerView: View {
 // MARK: - Comic Image View Component
 struct ComicImageView: View {
     let comic: ComicGenerationResponse
+    @State private var showFullScreen = false
     
     var body: some View {
         VStack(spacing: 16) {
@@ -463,6 +464,9 @@ struct ComicImageView: View {
                             .cornerRadius(12)
                             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                             .padding(.horizontal)
+                            .onTapGesture {
+                                showFullScreen = true
+                            }
                     case .failure:
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.gray.opacity(0.3))
@@ -485,6 +489,9 @@ struct ComicImageView: View {
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                     .padding(.horizontal)
+                    .onTapGesture {
+                        showFullScreen = true
+                    }
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.gray.opacity(0.3))
@@ -495,6 +502,9 @@ struct ComicImageView: View {
                             .foregroundColor(.gray)
                     )
             }
+        }
+        .fullScreenCover(isPresented: $showFullScreen) {
+            FullScreenComicView(comic: comic)
         }
     }
     
@@ -519,6 +529,195 @@ struct ComicImageView: View {
             }
         }
         .padding()
+    }
+}
+
+// MARK: - Full Screen Comic View with Zoom
+struct FullScreenComicView: View {
+    let comic: ComicGenerationResponse
+    @Environment(\.dismiss) private var dismiss
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+    @State private var isDragging = false
+    
+    var body: some View {
+        ZStack {
+            // Background
+            Color.black
+                .ignoresSafeArea()
+            
+            // Comic Image with Zoom and Pan
+            Group {
+                if let urlString = comic.imageUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .foregroundColor(.white)
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .scaleEffect(scale)
+                                .offset(offset)
+                                .gesture(
+                                    SimultaneousGesture(
+                                        MagnificationGesture()
+                                            .onChanged { value in
+                                                let delta = value / lastScale
+                                                lastScale = value
+                                                scale = min(max(scale * delta, 1.0), 5.0)
+                                            }
+                                            .onEnded { _ in
+                                                lastScale = 1.0
+                                            },
+                                        DragGesture()
+                                            .onChanged { value in
+                                                if scale > 1.0 {
+                                                    offset = CGSize(
+                                                        width: lastOffset.width + value.translation.width,
+                                                        height: lastOffset.height + value.translation.height
+                                                    )
+                                                    isDragging = true
+                                                }
+                                            }
+                                            .onEnded { _ in
+                                                lastOffset = offset
+                                                isDragging = false
+                                            }
+                                    )
+                                )
+                                .onTapGesture(count: 2) {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        if scale > 1.0 {
+                                            scale = 1.0
+                                            offset = .zero
+                                            lastOffset = .zero
+                                        } else {
+                                            scale = 2.0
+                                        }
+                                    }
+                                }
+                        case .failure:
+                            VStack {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.white)
+                                Text("Failed to load image")
+                                    .foregroundColor(.white)
+                            }
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                } else if let base64 = comic.imageBase64, !base64.isEmpty, let imageData = Data(base64Encoded: base64), let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .scaleEffect(scale)
+                        .offset(offset)
+                        .gesture(
+                            SimultaneousGesture(
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        let delta = value / lastScale
+                                        lastScale = value
+                                        scale = min(max(scale * delta, 1.0), 5.0)
+                                    }
+                                    .onEnded { _ in
+                                        lastScale = 1.0
+                                    },
+                                DragGesture()
+                                    .onChanged { value in
+                                        if scale > 1.0 {
+                                            offset = CGSize(
+                                                width: lastOffset.width + value.translation.width,
+                                                height: lastOffset.height + value.translation.height
+                                            )
+                                            isDragging = true
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        lastOffset = offset
+                                        isDragging = false
+                                    }
+                            )
+                        )
+                        .onTapGesture(count: 2) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                if scale > 1.0 {
+                                    scale = 1.0
+                                    offset = .zero
+                                    lastOffset = .zero
+                                } else {
+                                    scale = 2.0
+                                }
+                            }
+                        }
+                } else {
+                    VStack {
+                        Image(systemName: "photo")
+                            .font(.system(size: 50))
+                            .foregroundColor(.white)
+                        Text("No image available")
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // Top Bar with Close Button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.white)
+                            .background(Color.black.opacity(0.5))
+                            .clipShape(Circle())
+                    }
+                    .padding()
+                }
+                Spacer()
+            }
+            
+            // Bottom Info Bar
+            VStack {
+                Spacer()
+                if !isDragging {
+                    VStack(spacing: 8) {
+                        Text(comic.title)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Double tap to zoom • Pinch to zoom • Drag to pan")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.5))
+                    .cornerRadius(12)
+                    .padding(.bottom, 50)
+                    .transition(.opacity)
+                }
+            }
+        }
+        .onAppear {
+            // Reset zoom and pan state
+            scale = 1.0
+            lastScale = 1.0
+            offset = .zero
+            lastOffset = .zero
+            isDragging = false
+        }
     }
 }
 

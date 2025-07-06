@@ -279,7 +279,7 @@ struct OverviewContent: View {
                     .font(.headline)
                     .fontWeight(.bold)
                 
-                Text(scenario.detailedScenario)
+                Text(scenario.detailedScenario ?? "No detailed scenario available")
                     .font(.body)
                     .foregroundColor(.secondary)
             }

@@ -201,6 +201,7 @@ struct QuickActionButton: View {
 struct ComicCardView: View {
     let comic: ComicGenerationResponse
     let navigation: NavigationViewModel
+    @State private var showFullScreen = false
     
     var body: some View {
         Button(action: {
@@ -220,6 +221,9 @@ struct ComicCardView: View {
                                 .aspectRatio(contentMode: .fill)
                                 .frame(height: 120)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .onTapGesture {
+                                    showFullScreen = true
+                                }
                         case .failure:
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color.gray.opacity(0.3))
@@ -239,6 +243,9 @@ struct ComicCardView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 120)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .onTapGesture {
+                            showFullScreen = true
+                        }
                 } else {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(Color.gray.opacity(0.3))
@@ -289,6 +296,9 @@ struct ComicCardView: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+        .fullScreenCover(isPresented: $showFullScreen) {
+            FullScreenComicView(comic: comic)
+        }
     }
     
     private func formatDate(_ dateString: String) -> String {

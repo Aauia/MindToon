@@ -91,12 +91,12 @@ struct ComicGeneratorView: View {
                             Menu {
                                 ForEach(genres, id: \.self) { genre in
                                     Button(genre.capitalized) {
-                                        viewModel.genre = genre
+                                        viewModel.selectedGenre = genre
                                     }
                                 }
                             } label: {
                                 HStack {
-                                    Text(viewModel.genre.capitalized)
+                                    Text(viewModel.selectedGenre.capitalized)
                                         .font(.body)
                                         .foregroundColor(.primary)
                                     Spacer()
@@ -121,12 +121,12 @@ struct ComicGeneratorView: View {
                             Menu {
                                 ForEach(artStyles, id: \.self) { style in
                                     Button(style.capitalized) {
-                                        viewModel.artStyle = style
+                                        viewModel.selectedArtStyle = style
                                     }
                                 }
                             } label: {
                                 HStack {
-                                    Text(viewModel.artStyle.capitalized)
+                                    Text(viewModel.selectedArtStyle.capitalized)
                                         .font(.body)
                                         .foregroundColor(.primary)
                                     Spacer()

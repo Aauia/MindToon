@@ -73,6 +73,22 @@ GENRE_MAPPINGS = {
         "atmosphere": "mysterious, contemplative, noir",
         "visual_cues": "shadows and fog, detective office, city at night, rain-slicked streets"
     },
+        "adventure": {
+        "mood": "exploratory, thrilling, discovery-driven, heroic",
+        "palette": "earthy browns, greens, deep blues, vibrant golds",
+        "lighting": "sun-drenched, dappled light through foliage, torchlight in caves, bright daylight for open scenes",
+        "font_style": "rugged, classic adventure",
+        "atmosphere": "vast, mysterious, wondrous, untamed",
+        "visual_cues": "ancient ruins, hidden pathways, exotic creatures, maps and compasses, grand landscapes, treasure chests, iconic landmarks"
+    },
+        "slice-of-life": {
+        "mood": "calm, heartwarming, reflective, charming, cozy",
+        "palette": "soft pastels, warm muted tones, gentle natural colors",
+        "lighting": "gentle ambient light, warm sunlight through windows, soft indoor lighting",
+        "font_style": "friendly, rounded, casual",
+        "atmosphere": "everyday, comfortable, intimate, relatable",
+        "visual_cues": "cozy cafes, familiar homes, mundane objects with charm, subtle details of daily routine, changing seasons, relatable character interactions"
+    },
     "drama": {
         "mood": "emotional, realistic, character-focused, poignant",
         "palette": "realistic natural colors, subtle emotional tones, gray and blue tones",
@@ -85,16 +101,31 @@ GENRE_MAPPINGS = {
 
 # 🎨 Art Style System
 CONSISTENT_STYLES = {
-    "cartoon": "Disney-style 2D animation, cartoon illustration, cel-shaded artwork, bold black outlines, vibrant flat colors, exaggerated expressions, simplified character designs, clean vector art style, animated movie aesthetic, family-friendly cartoon style",
-    "comic book": "classic American comic book art, bold inks, primary colors, dynamic panels, superhero comic style, clear line art, comic book illustration",
-    "manga": "Japanese manga style, clean linework, screentones, black and white with selective color, expressive anime-style characters, detailed backgrounds",
-    "anime": "modern anime style, vibrant colors, large expressive eyes, detailed character designs, cel-shaded animation style, Japanese animation aesthetic",
-    "realistic": "photorealistic digital painting, highly detailed, naturalistic lighting, realistic proportions, lifelike textures, cinematic realism",
-    "watercolor": "watercolor painting style, soft brush strokes, flowing paint, artistic paper texture, delicate color blending, traditional art medium",
-    "sketch": "pencil sketch style, hand-drawn lines, artistic shading, sketchy linework, black and white illustration, traditional drawing",
-    "pixel art": "pixel art style, 8-bit aesthetic, retro game graphics, blocky sprites, limited color palette, digital pixel illustration",
-    "minimalist": "minimalist art style, clean simple lines, geometric shapes, limited color palette, modern flat design, vector illustration",
-    "vintage": "vintage illustration style, retro aesthetic, aged paper texture, classic advertising art, nostalgic color palette"
+    "cartoon": "Vibrant, expressive cartoon illustration. Features bold, clean outlines, simplified forms, and bright, flat colors with minimal shading. Characters have exaggerated features and dynamic poses. The style should evoke a modern animated series or a stylized graphic novel, distinct from classic Disney or traditional cel animation. Focus on clear visual storytelling and energetic composition.",
+    
+    "comic book": "Classic American comic book art style. Characterized by strong, impactful linework, dynamic action poses, and a vibrant, high-contrast color palette often with distinct black inks. Panels are designed for dramatic effect, with clear visual hierarchy and a focus on impactful storytelling typical of superhero or adventure comics. Features clear muscle definition, detailed expressions, and a bold, iconic aesthetic.",
+    
+    "manga": "Authentic Japanese manga illustration style. Defined by precise, sharp linework, a predominant use of black and white tones with occasional selective spot colors (often muted). Characters feature large, expressive eyes, nuanced facial expressions, and dynamic motion effects. Backgrounds can range from highly detailed to abstract, utilizing screentones for shading and texture. Emphasizes character emotion and narrative flow.",
+    
+    "anime": "Modern Japanese anime visual style. Characterized by vibrant, often saturated colors, detailed character designs with large expressive eyes, and dynamic compositions. Shading is typically cel-shaded (flat blocks of color for shadows and highlights). The aesthetic is clean, polished, and suitable for action or emotional drama, resembling high-quality animated series or feature films.",
+    
+    "realistic": "Photorealistic digital painting style. Focuses on highly detailed rendering, accurate anatomy, naturalistic lighting with subtle shadows and highlights, and lifelike textures. Proportions are realistic, and the overall impression is one of cinematic realism or a finely detailed classical painting, executed digitally. High fidelity to real-world appearance.",
+    
+    "watercolor": "Evocative watercolor painting style. Features soft, translucent washes of color with visible brushstrokes and a delicate, often ethereal quality. Outlines are minimal or entirely absent, allowing colors to blend naturally. The paper texture may be subtle. The mood is often calm, artistic, and flowing, reminiscent of traditional art mediums.",
+    
+    "sketch": "Expressive pencil sketch or charcoal drawing style. Characterized by visible, energetic hand-drawn lines, cross-hatching or subtle smudged shading for depth. The artwork feels raw and immediate, showcasing the artist's hand. Typically black and white or sepia-toned, with a focus on form and texture over detailed color.",
+    
+    "pixel art": "Distinctive pixel art style. Employs a low-resolution aesthetic with clearly visible square pixels, reminiscent of classic 8-bit or 16-bit video game graphics. Features blocky, stylized sprites, a limited color palette, and often strong, simple outlines. Can include isometric or side-scrolling perspectives. The charm lies in its retro, digital blocky aesthetic.",
+    
+    "minimalist": "Clean and sleek minimalist art style. Characterized by simple, geometric shapes, a very limited and often muted color palette, and abundant use of negative space. Focuses on conveying essence with few elements, resulting in a modern, abstract, and often serene aesthetic. Emphasizes clarity, functionality, and simplicity over detail.",
+    
+    "vintage": "Nostalgic vintage illustration style. Evokes a retro aesthetic, often inspired by mid-20th century advertising or children's book illustrations. Features muted or sepia-toned color palettes, subtle grain or aged paper textures, and stylized figures. The linework can vary but generally aims for a charming, classic, and slightly distressed look.",
+
+    "noir": "Gritty, high-contrast film noir style. Dominated by deep shadows, dramatic chiaroscuro lighting, and a predominantly monochrome (black, white, grays) or desaturated color palette with occasional splashes of bold color. Focuses on mystery, tension, and dramatic silhouettes, reflecting classic detective comics or films.",
+    
+    "storybook": "Whimsical and warm storybook illustration style. Features soft, inviting colors, gentle outlines (or painterly edges), and a focus on charming character designs. The style often has a slightly textured or painterly feel, suitable for children's literature, evoking a cozy and imaginative atmosphere.",
+    
+    "pop art": "Bold and graphic Pop Art style. Inspired by comic books and advertising, it uses strong outlines, bright, often unmixed colors, and sometimes incorporates halftone dot patterns or speech bubbles. Focuses on iconic imagery and everyday objects, with a flat, graphic, and energetic feel."
 }
 
 def generate_scenario(prompt: str, genre: str = None, art_style: str = None) -> DetailedScenarioSchema:
@@ -240,7 +271,7 @@ def generate_comic_scenario(prompt: str, genre: str = None, art_style: str = Non
     genre_lower = (genre or 'action').lower()
     art_style_lower = (art_style or 'comic book').lower()
     genre_guide = GENRE_MAPPINGS.get(genre_lower, GENRE_MAPPINGS["action"])
-    art_style_guide = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["comic book"])
+    art_style_guide = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["manga"])
 
     # ABSOLUTE requirement for exactly 6 panels with user's structure
     system_prompt = f"""YOU MUST CREATE EXACTLY 6 PANELS. NO MORE, NO LESS.
@@ -248,6 +279,15 @@ def generate_comic_scenario(prompt: str, genre: str = None, art_style: str = Non
 CONCEPT: {prompt}
 GENRE: {genre or 'determine from the concept'}
 ART STYLE: {art_style or 'determine from the genre'}
+
+CHARACTER DESIGN GUIDE (ABSOLUTELY ESSENTIAL FOR CONSISTENCY):
+- Based on the 'CONCEPT', identify the main characters and provide a detailed visual description for EACH of them.
+- For each character, include specific physical attributes (e.g., hair color, clothing, body type, unique features, accessories).
+- Example format: "For [Character Name]: [Detailed visual description of character's appearance, ensuring consistency]."
+
+
+IMPORTANT: These character designs MUST remain 100% consistent across all 6 panels. Their size, shape, color, costume details, and unique features must NOT change unless explicitly part of a transformation in the narrative.
+
 
 🎨 GENRE-SPECIFIC CREATIVE GUIDANCE:
 - MOOD: {genre_guide['mood']} - Every dialogue and action must reflect this emotional tone
@@ -263,62 +303,77 @@ MANDATORY 6-PANEL STRUCTURE:
 
 INTRODUCTION (Panels 1-2):
 Panel 1: SETUP & CHARACTER INTRODUCTION
-- Introduce main characters and setting in normal, peaceful environment
-- Show characters in their typical daily routine
-- Genre-appropriate atmosphere: {genre or 'adventure'} mood and tone
-- Dialogue: Character greeting/introduction + world establishment
-- Keep tone light and conversational
+- Introduce main characters (Pizza, Cinnabon, Chips) and setting in a normal, peaceful environment, perhaps a cozy, dream-like kitchen or a peaceful city backdrop.
+- Show characters in their typical daily routine or relaxed state.
+- Genre-appropriate atmosphere: {genre or 'adventure'} mood and tone.
+- Dialogue: One line for character introduction/greeting, one line establishing the world or their routine. Keep tone light and conversational.
+- VISUAL FRAMING: Establish shot or wide shot to introduce the full setting and all main characters clearly. Clear view of characters in their environment.
+- NARRATIVE PURPOSE: Establish the status quo and character dynamics BEFORE any conflict. Do NOT introduce the inciting incident here.
+- VISUAL DETAILS: Ensure all characters are present, clearly rendered according to their design guide.
 
 Panel 2: INCITING INCIDENT  
-- Something unexpected happens that changes everything
-- Show the moment that disrupts the normal world
-- Characters react with surprise, confusion, or concern
-- Dialogue: Character expressing surprise + questioning what's happening
-- Dialogue should show personality and relationship dynamics
+- Something unexpected happens that changes everything. This should be the 'cinnamon on the crust' incident.
+- Show the moment that disrupts the normal world. Characters react with surprise, confusion, or concern.
+- Dialogue: One line expressing surprise/reaction to the incident, one line questioning or acknowledging the disruption. Dialogue should show personality and relationship dynamics.
+- VISUAL FRAMING: Medium shot or close-up on the inciting incident itself (e.g., the pizza being defiled), showing characters' immediate reactions clearly. Focus on the object or event causing the disruption and the characters' expressions.
+- NARRATIVE PURPOSE: Introduce the core conflict. This panel MUST pivot the story. Do NOT resolve anything here.
+- VISUAL DETAILS: Highlight the source of the problem, and ensure characters show appropriate surprise/disgust.
 
 MAIN ACTION (Panels 3-5):
 Panel 3: RISING ACTION - FIRST CHALLENGE
-- Characters actively engage with the conflict/problem
-- Show them taking action or making important decisions
-- Build tension through character choices and obstacles
-- Dialogue: Character determination + addressing the challenge directly
-- Show character personality through how they handle pressure
+- Characters actively engage with the conflict/problem. Show them taking action or making important decisions.
+- Build tension through character choices and obstacles.
+- Dialogue: One line showing character determination or strategy, one line directly addressing the challenge. Show character personality through how they handle pressure.
+- VISUAL FRAMING: Action shot or medium shot. Clearly depict the characters interacting with the challenge (e.g., confronting Cinnabon or strategizing). Show their full bodies if engaged in physical action, but keep their faces visible.
+- NARRATIVE PURPOSE: Show the characters attempting to overcome the conflict, encountering initial obstacles. Tension should build.
+- VISUAL DETAILS: Characters should be in dynamic poses, reflecting their action or decision. Maintain consistent character designs.
 
 Panel 4: CLIMAX - PEAK CONFLICT
-- The most intense, dramatic moment of the entire story
-- Highest emotional stakes and maximum tension
-- Genre-specific peak action (comedy: biggest joke, drama: emotional peak, adventure: major confrontation)
-- Dialogue: Intense emotions + crucial decision-making
-- Characters reveal their true nature under pressure
+- The most intense, dramatic moment of the entire story. Highest emotional stakes and maximum tension.
+- Genre-specific peak action (e.g., a major confrontation or a powerful attack).
+- Dialogue: One line expressing intense emotions or a crucial decision, one line related to the core conflict's peak. Characters reveal their true nature under pressure.
+- VISUAL FRAMING: Close-up on the characters' faces to capture intense emotions, or a dynamic wide/medium shot highlighting the peak action. The focal point must be the most dramatic element. Show the impact of the climax.
+- NARRATIVE PURPOSE: This is the single most intense moment. All previous tension culminates here. Do NOT begin the resolution in this panel.
+- VISUAL DETAILS: Exaggerate expressions if appropriate for genre. Show environmental damage or dramatic effects caused by the climax.
 
 Panel 5: FALLING ACTION - CONSEQUENCES
-- Immediate results and aftermath of the climax
-- Characters process what just happened
-- Begin to understand the implications
-- Dialogue: Reflection on events + emotional processing
-- Show character growth or change from the experience
+- Immediate results and aftermath of the climax. Characters process what just happened. Begin to understand the implications.
+- Dialogue: One line reflecting on events, one line showing emotional processing or the immediate consequence. Show character growth or change from the experience.
+- VISUAL FRAMING: Medium shot to show characters reacting to the aftermath. Can include elements of the destroyed or changed environment. Focus on their emotional state and the immediate results of the climax.
+- NARRATIVE PURPOSE: Show the immediate fallout of the climax. Characters begin to understand the new reality. Do NOT fully resolve the story here.
+- VISUAL DETAILS: Characters might be weary, bruised, or showing relief/shock. The environment should reflect the recent conflict.
 
 CONCLUSION (Panel 6):
 Panel 6: RESOLUTION & ENDING
-- Story conclusion with clear, satisfying outcome
-- Show how characters have been changed by the experience
-- Genre-appropriate ending (comedy: final joke/punchline, drama: emotional resolution, adventure: victory/discovery)
-- Dialogue: Final reflection + memorable closing line that ties back to the opening
-- Leave reader satisfied with character journey
+- Story conclusion with clear, satisfying outcome. Show how characters have been changed by the experience.
+- Genre-appropriate ending (e.g., comedic resolution with a final joke, emotional resolution, adventure victory).
+- Dialogue: One line for final reflection, one memorable closing line that ties back to the opening or theme. Leave reader satisfied with character journey.
+- VISUAL FRAMING: Wide shot or medium shot showing the characters in their new, resolved state or environment. A sense of peace or finality should be conveyed.
+- NARRATIVE PURPOSE: Provide a clear, satisfying conclusion to the main plot and character arcs. This is the final state of the story.
+- VISUAL DETAILS: Characters should appear content or changed, and the environment should reflect the resolution.
 
 CRITICAL DIALOGUE & CHARACTER REQUIREMENTS:
-- Each character must have a CONSISTENT voice, personality, and speaking style throughout all 6 panels
-- Character names must be consistent across all panels
-- Dialogue must reflect each character's unique personality traits
-- Genre "{genre or 'adventure'}" MUST heavily influence: dialogue tone, character reactions, emotional depth
-- Art style "{art_style or 'cartoon'}" MUST be identical across all panels - same color palette, lighting, character design
-- Panel progression must show clear character development from introduction to conclusion
+- Each character must have a CONSISTENT voice, personality, and speaking style throughout all 6 panels.
+- Character names must be consistent across all panels.
+- Dialogue must reflect each character's unique personality traits.
+- The "{genre_lower}" genre MUST profoundly influence: dialogue tone, character reactions, emotional depth, and narrative progression.
+- The art style "{art_style_lower}" MUST be identical across ALL panels. This includes a consistent color palette, lighting, line work, shading, and the EXACT character designs specified in the 'CHARACTER DESIGN GUIDE' above. NO DEVIATION IN ART STYLE OR CHARACTER APPEARANCE IS PERMITTED.
+- Panel progression must show clear character development from introduction to conclusion.
 
-STRUCTURAL REQUIREMENTS:
-- Your response MUST contain exactly 6 frames in the frames array
-- Each panel needs exactly 2 dialogues that advance the narrative
-- Dialogue should flow naturally between panels showing character relationship evolution
-- Characters must react authentically to events based on their established personalities"""
+STRUCTURAL REQUIREMENTS (ABSOLUTELY CRITICAL):
+- Your response MUST contain EXACTLY 6 frames in the frames array. Any deviation will result in failure.
+- Each panel MUST have exactly 2 dialogue lines that are concise and directly advance the narrative. Do NOT add more or less dialogue.
+- Dialogue should flow naturally between panels, clearly showing the evolution of character relationships and the plot.
+- Characters must react authentically to events based on their established personalities and motivations.
+- ENSURE that the narrative pacing perfectly matches the 6-panel breakdown: Panels 1-2 for Introduction, Panels 3-5 for Main Action, and Panel 6 for Conclusion.
+
+ABSOLUTE MANDATES FOR SCENARIO GENERATION:
+- ENSURE that the visual descriptions for each panel explicitly reference the established character designs to reinforce consistency. For example, mention "Pizza, with his blue superhero costume and pepperoni toppings, stands..."
+- EVERY panel description must include details about the specific 'VISUAL STYLE', 'COLOR PALETTE', and 'LIGHTING' from the creative guidance to ensure stylistic uniformity.
+- Avoid introducing new characters or significant changes to the environment unless explicitly part of the 6-panel structure.
+- The panel descriptions should be rich enough to directly inform an image generation model, focusing on clear visual elements, character poses, and expressions.
+- AVOID: Narrator boxes, internal thoughts (unless conveyed via facial expression/body language), or lengthy prose that doesn't translate directly into a comic panel's visual or dialogue. Focus on "show, don't tell" for the comic scenario.
+"""
 
     messages = [
         ("system", system_prompt),
@@ -332,13 +387,15 @@ STRUCTURAL REQUIREMENTS:
     print(f"🎬 SCENARIO DEBUG: Generated {panel_count} frames (REQUIRED: 6)")
     if panel_count != 6:
         print(f"❌ ERROR: Only {panel_count} panels generated instead of 6!")
-        print(f"📝 Generated panels: {[f'Panel {i+1}: {frame.description[:50]}...' for i, frame in enumerate(result.frames)]}")
+        # Print a more detailed summary of generated panels for debugging
+        print(f"📝 Generated panels: {[f'Panel {frame.panel_number}: {frame.description[:50]}...' for frame in result.frames if hasattr(frame, 'description')]}")
     else:
         print(f"✅ SUCCESS: Exactly 6 panels generated as required")
     
     print(f"✅ Comic: {result.title}")
     print(f"📖 Narrative structure: Setup (1-2) → Action (3-5) → Resolution (6)")
     return result
+
 
 def generate_image_from_prompt(prompt: str, character_lora: str = None, lora_strength: float = 0.8, style_variant: str = None, width: int = 1024, height: int = 1024, negative_prompt: str = None, seed: int = None) -> Image.Image:
     """Generate image using Stability AI Stable Diffusion with LoRA support for character consistency and specific dimensions"""
@@ -858,8 +915,8 @@ def generate_complete_comic(concept: str, genre: str = None, art_style: str = No
             
             detailed_scenario = generate_scenario(
                 prompt=f"Based on this generated comic:\n\n{comic_content}\n\nOriginal concept: {concept}",
-                genre=validated_genre, 
-                art_style=validated_art_style
+                genre=scenario.genre,  # Use the genre from the comic scenario
+                art_style=scenario.art_style  # Use the art style from the comic scenario
             )
             print("✅ Detailed narrative scenario generated successfully")
             print(f"   📚 Scenario: {detailed_scenario.title}")
@@ -1089,7 +1146,7 @@ def validate_genre_and_style(genre: str = None, art_style: str = None) -> tuple:
     
     # Normalize genre
     if genre:
-        genre_lower = genre.lower()
+        genre_lower = genre.strip().lower()
         if genre_lower not in GENRE_MAPPINGS:
             print(f"⚠️ Unknown genre '{genre}', using 'action' as fallback")
             genre = "action"
@@ -1100,7 +1157,7 @@ def validate_genre_and_style(genre: str = None, art_style: str = None) -> tuple:
     
     # Normalize art style
     if art_style:
-        art_style_lower = art_style.lower()
+        art_style_lower = art_style.strip().lower()
         if art_style_lower not in CONSISTENT_STYLES:
             print(f"⚠️ Unknown art style '{art_style}', using 'comic book' as fallback")
             art_style = "comic book"

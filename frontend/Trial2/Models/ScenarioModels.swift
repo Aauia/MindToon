@@ -60,7 +60,7 @@ struct ScenarioUpdateRequest: Codable {
 struct DetailedScenario: Codable, Identifiable {
     let id: Int
     let comicId: Int
-    let detailedScenario: String
+    let detailedScenario: String?  // Made optional
     let characterDescriptions: [String: String]
     let plotSummary: String
     let themes: [String]

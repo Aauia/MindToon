@@ -42,8 +42,6 @@ struct RootView: View {
                     MindWorldView(navigation: navigation)
                 case .imaginationWorld:
                     ImaginationWorldView(navigation: navigation)
-                case .collections:
-                    CollectionsView()
                 case .scenarios:
                     // Future implementation: ScenariosView(navigation: navigation)
                     Text("Scenarios View - Coming Soon")
@@ -92,3 +90,4 @@ struct RootView: View {
         }
     }
 }
+

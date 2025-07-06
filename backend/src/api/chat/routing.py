@@ -68,7 +68,7 @@ class ChatMessagePayload(BaseModel):
     message: str
 
 # Existing scenario endpoint
-@router.post("/scenario/", response_model=ScenarioSchema)
+@router.post("/scenario/", response_model=DetailedScenarioSchema)
 def create_scenario(payload: ChatMessagePayload):
     response = generate_scenario(payload.message)
     return response
@@ -193,6 +193,9 @@ async def generate_comic_with_data_endpoint(
     Generate a complete comic and return both the image and metadata (iOS-friendly)
     """
     try:
+        print(f"Received genre: {request.genre}, art_style: {request.art_style}")
+        print(f"Type of genre: {type(request.genre)}, Type of art_style: {type(request.art_style)}")
+        print(f"Full request: {request}")
         print(f"🎨 Generating comic with data for: {request.concept}")
         
         # Generate the complete comic (AI determines genre and art_style from concept)
@@ -224,6 +227,15 @@ async def generate_comic_with_data_endpoint(
         img_byte_arr.seek(0)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode()
         
+        # Overwrite genre and art_style with user input if provided
+        user_genre = request.genre.strip().lower() if request.genre else comic_page.genre
+        user_art_style = request.art_style.strip().lower() if request.art_style else comic_page.art_style
+        comic_page.genre = user_genre
+        comic_page.art_style = user_art_style
+        if detailed_scenario:
+            detailed_scenario.genre = user_genre
+            detailed_scenario.art_style = user_art_style
+        
         # Use provided image_base64 if available, otherwise use generated one
         final_image_base64 = request.image_base64 if request.image_base64 else img_base64
         
@@ -231,8 +243,8 @@ async def generate_comic_with_data_endpoint(
         new_comic = ComicsPage(
             title=request.title,
             concept=request.concept,
-            genre=comic_page.genre,  # Use AI-determined genre
-            art_style=comic_page.art_style,  # Use AI-determined art_style
+            genre=user_genre,  # Always use user genre
+            art_style=user_art_style,  # Always use user art style
             world_type=request.world_type,  # NEW: Add world type
             image_url=supabase_image_url,  # Store Supabase URL
             image_base64=final_image_base64,  # Use final image base64
@@ -251,8 +263,8 @@ async def generate_comic_with_data_endpoint(
                 comic_id=new_comic.id,
                 title=detailed_scenario.title,
                 concept=request.concept,
-                genre=detailed_scenario.genre,
-                art_style=detailed_scenario.art_style,
+                genre=user_genre,  # Always use user genre
+                art_style=user_art_style,  # Always use user art style
                 world_type=request.world_type,
                 scenario_data=json.dumps(detailed_scenario.dict()),
                 word_count=detailed_scenario.word_count,
@@ -275,8 +287,8 @@ async def generate_comic_with_data_endpoint(
             "id": new_comic.id,
             "title": new_comic.title,
             "concept": new_comic.concept,
-            "genre": comic_page.genre,
-            "art_style": comic_page.art_style,
+            "genre": user_genre,
+            "art_style": user_art_style,
             "world_type": new_comic.world_type.value,
             "created_at": new_comic.created_at.isoformat(),
             "is_favorite": new_comic.is_favorite,

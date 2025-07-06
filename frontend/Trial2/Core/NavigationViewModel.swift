@@ -17,7 +17,6 @@ class NavigationViewModel: ObservableObject {
         case comicGenerator
         case comicViewer
         case imageGenerator
-        case collections
         case scenarios
         case detailedScenario
         case accountDeletion

@@ -9,8 +9,8 @@ class APIClient {
     // Custom URLSession with increased timeout
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 120 // seconds
-        config.timeoutIntervalForResource = 120 // seconds
+        config.timeoutIntervalForRequest = 150 // seconds
+        config.timeoutIntervalForResource = 150 // seconds
         return URLSession(configuration: config)
     }()
     

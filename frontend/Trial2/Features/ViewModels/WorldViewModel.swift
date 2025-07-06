@@ -143,7 +143,7 @@ class WorldViewModel: ObservableObject {
     }
     
     func loadWorldStats(for worldType: WorldType, refresh: Bool = false) async {
-        await worldManager.loadWorldStats(for: worldType, refresh: refresh)
+        await worldManager.loadWorldStats(for: worldType)
     }
     
     // MARK: - World Management

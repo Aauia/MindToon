@@ -73,7 +73,6 @@ struct ProfileView: View {
                             print("Navigate to Saved Ideas - (ViewModel action needed)")
                         }
                         ProfileOptionRow(icon: "folder.fill", title: "My Collections") {
-                            navigation.navigateTo(.collections)
                         }
                         ProfileOptionRow(icon: "doc.text.fill", title: "My Scenarios") {
                             navigation.navigateTo(.scenarios)

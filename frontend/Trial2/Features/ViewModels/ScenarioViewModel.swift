@@ -97,7 +97,7 @@ class ScenarioViewModel: ObservableObject {
             selectedScenario = scenario
             
             // Update editor state with loaded scenario
-            editorState.detailedScenario = scenario.detailedScenario
+            editorState.detailedScenario = scenario.detailedScenario ?? ""
             editorState.characterDescriptions = scenario.characterDescriptions
             editorState.plotSummary = scenario.plotSummary
             editorState.themes = scenario.themes
@@ -126,7 +126,7 @@ class ScenarioViewModel: ObservableObject {
         currentComicId = scenario.comicId
         
         // Load scenario data into editor
-        editorState.detailedScenario = scenario.detailedScenario
+        editorState.detailedScenario = scenario.detailedScenario ?? ""
         editorState.characterDescriptions = scenario.characterDescriptions
         editorState.plotSummary = scenario.plotSummary
         editorState.themes = scenario.themes
@@ -272,7 +272,7 @@ class ScenarioViewModel: ObservableObject {
                 // Search text filter
                 if !searchText.isEmpty {
                     let searchLower = searchText.lowercased()
-                    let scenarioMatch = scenario.detailedScenario.lowercased().contains(searchLower)
+                    let scenarioMatch = (scenario.detailedScenario ?? "").lowercased().contains(searchLower)
                     let plotMatch = scenario.plotSummary.lowercased().contains(searchLower)
                     let characterMatch = scenario.characterDescriptions.values.joined().lowercased().contains(searchLower)
                     if !scenarioMatch && !plotMatch && !characterMatch {
@@ -326,7 +326,7 @@ class ScenarioViewModel: ObservableObject {
             )
         }
         
-        let plotPoints = generateBasicPlotPoints(from: scenario.detailedScenario)
+        let plotPoints = generateBasicPlotPoints(from: scenario.detailedScenario ?? "")
         
         return ScenarioAnalysis(
             scenarioId: scenario.id,
@@ -372,7 +372,7 @@ class ScenarioViewModel: ObservableObject {
     
     private func determineComplexity(scenario: DetailedScenario) -> ScenarioComplexity {
         let characterCount = scenario.characterDescriptions.count
-        let wordCount = scenario.detailedScenario.components(separatedBy: .whitespacesAndNewlines).count
+        let wordCount = (scenario.detailedScenario ?? "").components(separatedBy: .whitespacesAndNewlines).count
         let themeCount = scenario.themes.count
         
         let complexityScore = characterCount + (wordCount / 100) + (themeCount * 2)

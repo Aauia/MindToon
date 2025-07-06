@@ -167,6 +167,30 @@ class AuthManager: ObservableObject {
         return token
     }
     
+    func validateAndGetToken() async throws -> String {
+        guard let token = getStoredToken(), !token.isEmpty else {
+            print("❌ No valid token found in storage")
+            throw APIError.unauthorized
+        }
+        
+        print("🔑 Retrieved token: ✅ Found")
+        print("🔑 Token length: \(token.count)")
+        
+        // Optional: Validate token format (basic check)
+        if token.count < 10 {
+            print("⚠️ Token seems too short, might be invalid")
+        }
+        
+        return token
+    }
+    
+    func isTokenValid() -> Bool {
+        guard let token = getStoredToken(), !token.isEmpty else {
+            return false
+        }
+        return true
+    }
+    
     private func checkAuthStatus() {
         let token = getStoredToken()
         print("🔐 Checking auth status - token exists: \(token != nil)")
@@ -190,4 +214,14 @@ class AuthManager: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
-} 
+}
+
+#if DEBUG
+extension AuthManager {
+    static var preview: AuthManager {
+        let manager = AuthManager()
+        // Optionally set up mock state here
+        return manager
+    }
+}
+#endif 

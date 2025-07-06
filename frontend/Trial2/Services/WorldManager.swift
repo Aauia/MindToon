@@ -61,10 +61,7 @@ class WorldManager: ObservableObject {
         errorMessage = nil
         
         do {
-            let token = await AuthManager.shared.getStoredToken()
-            guard let token = token else {
-                throw APIError.unauthorized
-            }
+            let token = try await AuthManager.shared.validateAndGetToken()
             
             let request = WorldComicsRequest(
                 worldType: worldType,
@@ -131,69 +128,20 @@ class WorldManager: ObservableObject {
     func refreshWorld(_ worldType: WorldType) async {
         cache.clearComics(for: worldType)
         await loadWorldComics(for: worldType, page: 1, refresh: true)
-        await loadWorldStats(for: worldType, refresh: true)
+        await loadWorldStats(for: worldType)
     }
     
     // MARK: - World Statistics
-    func loadWorldStats(for worldType: WorldType, refresh: Bool = false) async {
-        // Check cache first
-        if !refresh, let cachedStats = cache.getStats(for: worldType) {
-            worldStats[worldType] = cachedStats
-            return
-        }
-        
+    func loadWorldStats(for worldType: WorldType) async {
         do {
-            let token = await AuthManager.shared.getStoredToken()
-            guard let token = token else {
-                throw APIError.unauthorized
-            }
+            let token = try await AuthManager.shared.validateAndGetToken()
             
             let stats = try await apiClient.getWorldStats(worldType: worldType, token: token)
             worldStats[worldType] = stats
             
-            // Cache results
-            cache.setStats(stats, for: worldType)
-            
             print("✅ Loaded stats for \(worldType.displayName)")
-            
-        } catch let decodingError as DecodingError {
-            // Handle specific decoding errors gracefully
-            ErrorLogger.shared.log(
-                APIError.decodingError(decodingError),
-                context: "loadWorldStats - \(worldType.displayName)"
-            )
-            print("❌ Failed to decode stats for \(worldType.displayName): \(decodingError)")
-            
-            // Provide fallback stats with default values
-            let fallbackStats = WorldStatsResponse(
-                worldType: worldType,
-                totalComics: 0,
-                favoriteComics: 0,
-                publicComics: 0,
-                totalCollections: 0,
-                totalScenarios: nil, // Use nil for missing field
-                lastActivity: nil
-            )
-            worldStats[worldType] = fallbackStats
-            
         } catch {
-            ErrorLogger.shared.log(
-                error as? APIError ?? APIError.networkError(error),
-                context: "loadWorldStats - \(worldType.displayName)"
-            )
             print("❌ Failed to load stats for \(worldType.displayName): \(error)")
-            
-            // Provide fallback stats for network errors
-            let fallbackStats = WorldStatsResponse(
-                worldType: worldType,
-                totalComics: 0,
-                favoriteComics: 0,
-                publicComics: 0,
-                totalCollections: 0,
-                totalScenarios: nil,
-                lastActivity: nil
-            )
-            worldStats[worldType] = fallbackStats
         }
     }
     
