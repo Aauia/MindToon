@@ -15,4 +15,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 # Copy source code
 COPY ./backend/src ./src
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Set Python path to include the src directory
+ENV PYTHONPATH="/app/src:$PYTHONPATH"
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

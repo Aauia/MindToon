@@ -7,12 +7,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8000"
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     env_file:
       - .env
     environment:
       - PORT=8000
       - DATABASE_URL=postgresql://dbuser:dbpassword@db_service:5432/mydb
+      - PYTHONPATH=/app/src
     volumes:
       - ./backend/src:/app/src
       - ./backend/requirements.txt:/tmp/requirements.txt
