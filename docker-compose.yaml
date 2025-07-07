@@ -3,18 +3,19 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8000"
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     env_file:
       - .env
     environment:
       - PORT=8000
       - DATABASE_URL=postgresql://dbuser:dbpassword@db_service:5432/mydb
     volumes:
-      - ./backend/src:/app
+      - ./backend/src:/app/src
+      - ./backend/requirements.txt:/tmp/requirements.txt
     depends_on:
       db_service:
         condition: service_healthy

@@ -1,24 +1,19 @@
-FROM python:3.13.3-slim-bullseye
-
-
-#host.docker.internal -> localhost
+FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y curl
 
-#create virtual environment
-#isolate python app and installs from system-level python
+# Virtual environment
 RUN python -m venv /opt/venv
-ENV PATH=/opt/venv/bin:$PATH
-
+ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-#copy local_folder/file container_destination
-COPY requirements.txt  /tmp/requirements.txt
+# Copy requirements (mounted from compose)
+COPY /tmp/requirements.txt /tmp/requirements.txt
 
-#run within_container_while_building
-RUN pip install -r  /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY ./src .
+# Copy source code
+COPY ./backend/src ./src
 
-CMD ["python","-m","http.server","8000"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
