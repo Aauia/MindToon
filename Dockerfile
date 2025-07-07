@@ -9,8 +9,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 
 # Copy requirements (mounted from compose)
-COPY /tmp/requirements.txt /tmp/requirements.txt
-
+COPY ./backend/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Copy source code
