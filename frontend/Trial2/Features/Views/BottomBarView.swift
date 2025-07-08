@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - BottomBarTab (Enum for Tab Identification)
 enum BottomBarTab: String, CaseIterable {
@@ -61,10 +64,15 @@ struct BottombarView: View {
                 Spacer()
             }
         }
-        .padding(.vertical, 10)
-        .background(Color.purple.opacity(0.1).edgesIgnoringSafeArea(.bottom))
-        .cornerRadius(20)
-        .shadow(radius: 5)
+        // Restore original vertical padding
+        .padding(.vertical, 12) // modest height
+        .padding(.horizontal, 0) // edge-to-edge
+        .background(
+            Color(hex: "#5A3FA0").opacity(0.85)
+        )
+        .ignoresSafeArea(.container, edges: .bottom)
+        .padding(.horizontal, 0) // no extra margin
+        .padding(.bottom, 0) // flush with bottom
     }
 }
 
@@ -77,18 +85,31 @@ struct TabBarItem: View {
 
     var body: some View {
         Button(action: action) {
-            VStack {
+            VStack(spacing: 2) {
                 Image(systemName: iconName)
-                    .font(.title2)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(isSelected ? .black : Color(hex: "#E6D6FF"))
                 Text(label)
-                    .font(.caption2)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(isSelected ? .black : Color(hex: "#E6D6FF"))
             }
-            .foregroundColor(isSelected ? .black : .purple) // Change color if selected
         }
     }
 }
+
+#if canImport(UIKit)
+struct BlurView: UIViewRepresentable {
+    var style: UIBlurEffect.Style = .systemMaterial
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        return UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
+}
+#endif
 
 // MARK: - Preview
 #Preview {
     BottombarView(navigation: NavigationViewModel())
 }
+
+

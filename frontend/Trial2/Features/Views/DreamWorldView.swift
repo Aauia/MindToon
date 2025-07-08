@@ -11,7 +11,10 @@ struct DreamWorldView: View {
                 ZStack {
                     // Background gradient for dream theme
                     LinearGradient(
-                        gradient: Gradient(colors: [Color.pink.opacity(0.8), Color.purple.opacity(0.6)]),
+                        gradient: Gradient(colors: [
+                            Color(red: 0.85, green: 0.73, blue: 0.94), // lavender
+                            Color(red: 0.99, green: 0.85, blue: 0.92)  // blush (slightly pinker than peach)
+                        ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -49,7 +52,7 @@ struct DreamWorldView: View {
                                 QuickActionButton(
                                     title: "New Dream",
                                     icon: "plus.circle.fill",
-                                    color: .blue
+                                    color: Color(red: 0.7, green: 0.4, blue: 0.9) // muted purple
                                 ) {
                                     navigation.currentScreen = .comicGenerator
                                 }
@@ -57,7 +60,7 @@ struct DreamWorldView: View {
                                 QuickActionButton(
                                     title: "View All",
                                     icon: "square.grid.2x2",
-                                    color: .green
+                                    color: Color(red: 0.85, green: 0.73, blue: 0.94) // lavender
                                 ) {
                                     viewModel.showFavoritesOnly = false
                                 }
@@ -65,7 +68,7 @@ struct DreamWorldView: View {
                                 QuickActionButton(
                                     title: "Favorites",
                                     icon: "heart.fill",
-                                    color: .pink
+                                    color: Color(red: 0.99, green: 0.85, blue: 0.85) // peach
                                 ) {
                                     viewModel.showFavoritesOnly = true
                                 }
@@ -93,7 +96,7 @@ struct DreamWorldView: View {
                                         navigation.currentScreen = .comicGenerator
                                     }
                                     .padding()
-                                    .background(Color.blue)
+                                    .background(Color(red: 0.7, green: 0.4, blue: 0.9)) // muted purple
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .padding(.top)
@@ -117,7 +120,7 @@ struct DreamWorldView: View {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
                                     .padding()
-                                    .background(Color.white.opacity(0.8))
+                                    .background(Color.clear)
                                     .cornerRadius(10)
                                     .padding(.horizontal)
                             }
@@ -128,13 +131,16 @@ struct DreamWorldView: View {
 
                 // Bottom bar
                 BottombarView(navigation: navigation)
-                    .frame(maxHeight: 80)
             }
             // ✅ Proper native navigation bar toolbar
             .toolbar {
-                CustomTopBarContent(title: "", showBackButton: true, leadingAction: {
-                    navigation.currentScreen = .worlds
-                })
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { navigation.currentScreen = .worlds }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.primary)
+                    }
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             // ❌ Don't hide navigation bar if you want toolbar to show

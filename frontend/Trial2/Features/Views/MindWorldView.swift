@@ -11,7 +11,10 @@ struct MindWorldView: View {
                 ZStack {
                     // Background gradient for mind theme
                     LinearGradient(
-                        gradient: Gradient(colors: [Color.green.opacity(0.7), Color.blue.opacity(0.5)]),
+                        gradient: Gradient(colors: [
+                            Color(red: 0.78, green: 0.85, blue: 0.97), // soft blue-lavender
+                            Color(red: 0.80, green: 0.97, blue: 0.92)  // minty aqua
+                        ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -49,7 +52,7 @@ struct MindWorldView: View {
                                 QuickActionButton(
                                     title: "New Essay",
                                     icon: "plus.circle.fill",
-                                    color: .blue
+                                    color: Color(red: 0.7, green: 0.4, blue: 0.9) // muted purple
                                 ) {
                                     navigation.currentScreen = .comicGenerator
                                 }
@@ -57,7 +60,7 @@ struct MindWorldView: View {
                                 QuickActionButton(
                                     title: "View All",
                                     icon: "square.grid.2x2",
-                                    color: .green
+                                    color: Color(red: 0.85, green: 0.73, blue: 0.94) // lavender
                                 ) {
                                     viewModel.showFavoritesOnly = false
                                 }
@@ -65,7 +68,7 @@ struct MindWorldView: View {
                                 QuickActionButton(
                                     title: "Favorites",
                                     icon: "heart.fill",
-                                    color: .pink
+                                    color: Color(red: 0.99, green: 0.85, blue: 0.85) // peach
                                 ) {
                                     viewModel.showFavoritesOnly = true
                                 }
@@ -93,7 +96,7 @@ struct MindWorldView: View {
                                         navigation.currentScreen = .comicGenerator
                                     }
                                     .padding()
-                                    .background(Color.blue)
+                                    .background(Color(red: 0.7, green: 0.4, blue: 0.9)) // muted purple
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .padding(.top)
@@ -117,7 +120,7 @@ struct MindWorldView: View {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
                                     .padding()
-                                    .background(Color.white.opacity(0.8))
+                                    .background(Color.clear)
                                     .cornerRadius(10)
                                     .padding(.horizontal)
                             }
@@ -128,12 +131,15 @@ struct MindWorldView: View {
                 
                 // Bottom bar
                 BottombarView(navigation: navigation)
-                    .frame(maxHeight: 80)
             }
             .toolbar {
-                CustomTopBarContent(title: "", showBackButton: true, leadingAction: {
-                    navigation.currentScreen = .worlds
-                })
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { navigation.currentScreen = .worlds }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.primary)
+                    }
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {

@@ -1,3 +1,4 @@
+
 from PIL import Image, ImageDraw, ImageFont
 from typing import List, Tuple, Optional
 from api.ai.schemas import Dialogue # Make sure to import the updated Dialogue schema
@@ -565,11 +566,12 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
         # Each panel tailored for storytelling beats using valid SDXL sizes
 
         panel1_w, panel1_h = 768, 1344     # Strong vertical intro (scene setup / entry)
-        panel2_w, panel2_h = 1344, 768     # Establishing shot or zoom (world / space)
-        panel3_w, panel3_h = 1536, 640     # Super wide reveal or climax (turning point)
-        panel4_w, panel4_h = 1152, 896     # Aftermath (character response / world state)
+        panel2_w, panel2_h = 1344, 768 
+            # Establishing shot or zoom (world / space)
+        panel3_w, panel3_h = 1344, 768      # Super wide reveal or climax (turning point)
+        panel4_w, panel4_h = 1344, 768      # Aftermath (character response / world state, updated for better aspect ratio)
         panel5_w, panel5_h = 1216, 832     # Emotional close-up / reflection
-        panel6_w, panel6_h = 1024, 1024    # Closing beat / ambiguity / full stop
+        panel6_w, panel6_h = 1216, 832    # Closing beat / ambiguity / full stop
 
         # Calculate sheet size based on the narrative layout:
         # Layout structure:

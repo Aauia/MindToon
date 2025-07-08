@@ -50,12 +50,8 @@ struct RootView: View {
                         .font(.title)
                         .navigationTitle("Scenarios")
                 case .detailedScenario:
-                    if let scenario = navigation.selectedScenario {
-                        DetailedScenarioView(scenario: scenario)
-                    } else {
-                        Text("No scenario selected")
-                            .font(.title)
-                    }
+                    Text("Scenarios View - Coming Soon")
+                    
                 case .accountDeletion:
                     // AccountDeletion is handled via sheet in ProfileView
                     ProfileView(navigation: navigation)

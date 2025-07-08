@@ -21,7 +21,24 @@ class ProfileViewModel: ObservableObject {
 
     // MARK: - Initialization
     init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
         loadUserProfile()
+    }
+    
+    @objc private func handleLogout() {
+        userName = ""
+        userEmail = ""
+        userFullName = ""
+        profileImageUrl = nil
+        isLoading = false
+        errorMessage = nil
+        deletionSummary = nil
+        showingAccountDeletion = false
+        isDeletingAccount = false
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Data Fetching and Business Logic

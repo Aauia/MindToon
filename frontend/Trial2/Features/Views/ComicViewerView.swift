@@ -13,201 +13,221 @@ struct ComicViewerView: View {
     @State private var alertMessage = ""
     @State private var hasDetailedScenario = false
     @State private var isLoadingScenario = false
+    @State private var showFullScreenComic = false
+    @State private var loadedComicImage: UIImage? = nil
+    // Add this property to optionally receive the scenario from the view model
+    @State var detailedScenarioText: String? = nil
+    @State private var isLoadingDetailedScenario: Bool = false
     
     private let apiClient = APIClient.shared
     
     var body: some View {
-        Group {
-            if let comic = navigation.generatedComic {
-                VStack(spacing: 0) {
-                    // Custom Navigation Bar
-                    HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "arrow.left.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.black)
-                        }
-                        
-                        Spacer()
-                        
-                        Button("Edit") {
-                            navigation.navigateTo(.comicGenerator)
-                            dismiss()
-                        }
-                        .foregroundColor(.blue)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .background(Color.white)
-                    
-                    // Comic Display Area
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            // MAIN COMIC DISPLAY - Prioritize Complete Comic Sheet
-                            ComicImageView(comic: comic)
-                            
-                            Spacer(minLength: 120) // Space for bottom section
-                        }
-                    }
-                    
-                    // Bottom Comic Information Section
+        ZStack(alignment: .topLeading) {
+            // Main content
+            ZStack {
+                // Updated background to match MainDashboardView
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(hex: "#D7A8F0"), // lavender (matches MainDashboardView)
+                        Color(hex: "#FCDADA")  // peach (matches MainDashboardView)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                if let comic = navigation.generatedComic {
                     VStack(spacing: 0) {
-                        // Comic Title Header with World Info
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(comic.title)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.black)
-                                Spacer()
-                            }
-                            
-                            // World Information
-                            HStack {
-                                Circle()
-                                    .fill(worldColor(for: comic.worldType))
-                                    .frame(width: 20, height: 20)
-                                    .overlay(
-                                        Image(systemName: worldIcon(for: comic.worldType))
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.white)
-                                    )
-                                
-                                Text("Saved to \(comic.worldType.displayName)")
-                                    .font(.caption)
-                                    .foregroundColor(.black.opacity(0.7))
-                                
-                                Spacer()
-                            }
+                        // Comic image and info card
+                        ComicImageView(comic: comic, onImageLoaded: { image in
+                            loadedComicImage = image
+                        })
+                        .frame(maxWidth: .infinity, maxHeight: UIScreen.main.bounds.height * 0.45)
+                        .background(Color.clear)
+                        .onTapGesture {
+                            if loadedComicImage != nil { showFullScreenComic = true }
                         }
-                        
-                        // Action Buttons
-                        HStack(spacing: 20) {
-                            // Save to World Button
-                            Button(action: {
-                                saveComicToWorld()
-                            }) {
-                                if isLoading {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: isSaved ? "checkmark.circle.fill" : "plus.circle")
+                        // Info card below
+                        VStack(spacing: 20) { // Increased spacing between name and script
+                            // Comic Title Header with World Info
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text(comic.title)
                                         .font(.title2)
-                                        .foregroundColor(isSaved ? .green : .blue)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(Color(hex: "#5A3FA0"))
+                                    Spacer()
+                                }
+                                // World Information
+                                HStack {
+                                    Circle()
+                                        .fill(worldColor(for: comic.worldType))
+                                        .frame(width: 20, height: 20)
+                                        .overlay(
+                                            Image(systemName: worldIcon(for: comic.worldType))
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.white)
+                                        )
+                                    Text("Saved to \(comic.worldType.displayName)")
+                                        .font(.caption)
+                                        .foregroundColor(Color(hex: "#5A3FA0").opacity(0.7))
+                                    Spacer()
                                 }
                             }
-                            .disabled(isLoading || isSaved)
-                            
-                            // Favorite Button
-                            Button(action: {
-                                toggleFavorite()
-                            }) {
-                                Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                    .font(.title2)
-                                    .foregroundColor(isFavorite ? .red : .black)
-                            }
-                            .disabled(!isSaved) // Can only favorite saved comics
-                            
-                            // Detailed Scenario Button
-                            if hasDetailedScenario {
+                            // Action Buttons
+                            HStack(spacing: 32) {
+                                // Favorite Button
                                 Button(action: {
-                                    viewDetailedScenario()
+                                    toggleFavorite()
                                 }) {
-                                    if isLoadingScenario {
-                                        ProgressView()
-                                            .scaleEffect(0.8)
-                                    } else {
-                                        Image(systemName: "text.book.closed.fill")
-                                            .font(.title2)
-                                            .foregroundColor(.purple)
-                                    }
+                                    Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                        .font(.title2)
+                                        .foregroundColor(isFavorite ? .red : .black)
                                 }
-                                .disabled(isLoadingScenario)
+                                // Download Button
+                                Button(action: {
+                                    downloadComic()
+                                }) {
+                                    Image(systemName: "arrow.down")
+                                        .font(.title2)
+                                        .foregroundColor(.black)
+                                }
+                                // Share Button
+                                Button(action: {
+                                    shareComic()
+                                }) {
+                                    Image(systemName: "paperplane")
+                                        .font(.title2)
+                                        .foregroundColor(.black)
+                                }
                             }
-                            
-                            Button(action: {
-                                downloadComic()
-                            }) {
-                                Image(systemName: "arrow.down")
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                            // Script Section - Expanded
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Story")
                                     .font(.title2)
-                                    .foregroundColor(.black)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Color(hex: "#5A3FA0"))
+                                if isLoadingDetailedScenario {
+                                    ProgressView("Loading detailed scenario...")
+                                        .frame(minHeight: 120, maxHeight: 200)
+                                } else {
+                                    ScrollView {
+                                        Text(detailedScenarioText ?? comic.concept)
+                                            .font(.body)
+                                            .lineSpacing(4)
+                                            .foregroundColor(Color(hex: "#5A3FA0").opacity(0.8))
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 4)
+                                    }
+                                    .frame(minHeight: 120, maxHeight: 200)
+                                    .background(Color.clear)
+                                }
                             }
-                            
-                            Button(action: {
-                                shareComic()
-                            }) {
-                                Image(systemName: "paperplane")
-                                    .font(.title2)
-                                    .foregroundColor(.black)
-                            }
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 8)
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 16)
-                        
-                        // Script Section - Expanded
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Your script")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.black)
-                            
-                            ScrollView {
-                                Text(comic.concept)
-                                    .font(.body)
-                                    .lineSpacing(4)
-                                    .foregroundColor(.black.opacity(0.8))
-                                    .multilineTextAlignment(.leading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 4)
+                        .background(Color.white.opacity(0.95))
+                        .cornerRadius(16, corners: [.topLeft, .topRight])
+                        .shadow(color: Color(hex: "#D7A8F0").opacity(0.15), radius: 8, x: 0, y: -2)
+                        .padding(.horizontal, 0)
+                    }
+                    .background(Color.clear)
+                    // Remove default toolbar back button
+                    .toolbar { ToolbarItem(placement: .navigationBarLeading) { EmptyView() } }
+                    .alert("Comic Status", isPresented: $showAlert) {
+                        Button("OK") { }
+                    } message: {
+                        Text(alertMessage)
+                    }
+                    .onAppear {
+                        guard let comic = navigation.generatedComic else { return }
+                        detailedScenarioText = nil
+                        if comic.hasDetailedScenario {
+                            isLoadingDetailedScenario = true
+                            Task {
+                                do {
+                                    let token = await AuthManager.shared.getStoredToken()
+                                    if let token = token {
+                                        let premise = try await APIClient.shared.getScenarioByComic(comicId: comic.id, token: token)
+                                        detailedScenarioText = premise
+                                    } else {
+                                        detailedScenarioText = comic.concept
+                                    }
+                                } catch {
+                                    detailedScenarioText = comic.concept
+                                }
+                                isLoadingDetailedScenario = false
                             }
-                            .frame(minHeight: 120, maxHeight: 200) // Increased from 80-120 to 120-200
-                            .background(Color.clear)
+                        } else {
+                            detailedScenarioText = comic.concept
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
                     }
-                    .background(Color(red: 1.0, green: 0.9, blue: 0.7)) // Sandy/yellow background
-                    .cornerRadius(16, corners: [.topLeft, .topRight])
-                }
-                .background(Color.white)
-                .navigationBarHidden(true)
-                .alert("Comic Status", isPresented: $showAlert) {
-                    Button("OK") { }
-                } message: {
-                    Text(alertMessage)
-                }
-                .onAppear {
-                    print("🎬 ComicViewerView appeared - Title: '\(comic.title)'")
-                    print("🎬 ImageBase64 length: \(comic.imageBase64?.count)")
-                    
-                    // Check if this comic has a detailed scenario
-                    Task {
-                        await checkForDetailedScenario()
+                    .onChange(of: navigation.generatedComic) { comic in
+                        guard let comic = comic else { return }
+                        detailedScenarioText = nil
+                        if comic.hasDetailedScenario {
+                            isLoadingDetailedScenario = true
+                            Task {
+                                do {
+                                    let token = await AuthManager.shared.getStoredToken()
+                                    if let token = token {
+                                        let premise = try await APIClient.shared.getScenarioByComic(comicId: comic.id, token: token)
+                                        detailedScenarioText = premise
+                                    } else {
+                                        detailedScenarioText = comic.concept
+                                    }
+                                } catch {
+                                    detailedScenarioText = comic.concept
+                                }
+                                isLoadingDetailedScenario = false
+                            }
+                        } else {
+                            detailedScenarioText = comic.concept
+                        }
                     }
-                }
-            } else {
-                // Show error when no comic is available
-                VStack {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 50))
-                        .foregroundColor(.orange)
-                    Text("No comic to display")
-                        .font(.title2)
+                } else {
+                    // Show error when no comic is available
+                    VStack {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 50))
+                            .foregroundColor(.orange)
+                        Text("No comic to display")
+                            .font(.title2)
+                            .padding()
+                        Button("Go Back") {
+                            dismiss()
+                        }
                         .padding()
-                    Button("Go Back") {
-                        dismiss()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
                     }
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
             }
+            // Back button overlays the entire view, always visible
+            Button(action: {
+                navigation.navigateTo(.worlds)
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.title2)
+                    .foregroundColor(Color(hex: "#5A3FA0"))
+                    .padding(8)
+                    .background(Color.white.opacity(0.8))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 2)
+            }
+            .padding(.leading, 16)
+            .padding(.top, 24)
         }
+        .sheet(isPresented: $showFullScreenComic) {
+            FullScreenComicView(image: loadedComicImage, isPresented: $showFullScreenComic)
+        }
+        
     }
     
     // MARK: - Helper Functions
@@ -406,119 +426,79 @@ struct ComicViewerView: View {
         }
     }
     
-    private func viewDetailedScenario() {
-        Task {
-            await performViewDetailedScenario()
-        }
-    }
-    
-    @MainActor
-    private func performViewDetailedScenario() async {
-        guard let comic = navigation.generatedComic else { return }
-        
-        isLoadingScenario = true
-        
-        do {
-            let token = await AuthManager.shared.getStoredToken()
-            guard let token = token else {
-                alertMessage = "Please log in to view detailed scenarios"
-                showAlert = true
-                isLoadingScenario = false
-                return
-            }
-            
-            let scenario = try await apiClient.getScenarioByComic(comicId: comic.id, token: token)
-            
-            // Navigate to detailed scenario view
-            navigation.showDetailedScenario(with: scenario)
-            
-        } catch {
-            alertMessage = "Failed to load detailed scenario: \(error.localizedDescription)"
-            showAlert = true
-            print("❌ Failed to load detailed scenario: \(error)")
-        }
-        
-        isLoadingScenario = false
-    }
+
+ 
 }
 
 // MARK: - Comic Image View Component
 struct ComicImageView: View {
     let comic: ComicGenerationResponse
-    
+    var onImageLoaded: (UIImage?) -> Void
+    @State private var asyncImage: UIImage? = nil
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             if let urlString = comic.imageUrl, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
                         ProgressView()
-                            .frame(maxHeight: 450)
+                            .frame(maxHeight: 500)
                     case .success(let image):
+                        let uiImage = image.asUIImage()
+                        Color.clear.onAppear { onImageLoaded(uiImage) }
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: .infinity)
-                            .frame(maxHeight: 450)
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                            .padding(.horizontal)
+                            .aspectRatio(contentMode: .fill)
+                            .frame(maxWidth: .infinity, maxHeight: 500)
+                            .clipped()
                     case .failure:
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(maxHeight: 450)
-                            .overlay(
-                                Image(systemName: "photo")
-                                    .font(.title)
-                                    .foregroundColor(.gray)
-                            )
+                        placeholderView
                     @unknown default:
                         EmptyView()
                     }
                 }
             } else if let base64 = comic.imageBase64, !base64.isEmpty, let imageData = Data(base64Encoded: base64), let uiImage = UIImage(data: imageData) {
+                Color.clear.onAppear { onImageLoaded(uiImage) }
                 Image(uiImage: uiImage)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .frame(maxHeight: 450)
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                    .padding(.horizontal)
+                    .aspectRatio(contentMode: .fill)
+                    .frame(maxWidth: .infinity, maxHeight: 500)
+                    .clipped()
             } else {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(maxHeight: 450)
-                    .overlay(
-                        Image(systemName: "photo")
-                            .font(.title)
-                            .foregroundColor(.gray)
-                    )
+                Color.clear.onAppear { onImageLoaded(nil) }
+                placeholderView
             }
         }
     }
-    
-    private func showErrorMessage(_ message: String) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: "photo.circle.fill")
-                .font(.system(size: 50))
-                .foregroundColor(.red)
-            
-            Text("Unable to display comic image")
-                .font(.headline)
-                .foregroundColor(.red)
-            
-            Text(message)
-                .font(.body)
-                .foregroundColor(.gray)
-            
-            if let base64 = comic.imageBase64, !base64.isEmpty {
-                Text("Base64 data: \(base64.count) characters")
-                    .font(.caption)
-                    .foregroundColor(.blue)
-            }
+    private var placeholderView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.gray.opacity(0.18))
+                .frame(maxWidth: .infinity, maxHeight: 500)
+                .aspectRatio(1, contentMode: .fit)
+            Image(systemName: "photo")
+                .font(.system(size: 64, weight: .regular))
+                .foregroundColor(Color.gray.opacity(0.45))
         }
-        .padding()
+        .padding(.horizontal, 8)
+    }
+}
+
+extension Image {
+    func asUIImage() -> UIImage? {
+        #if canImport(UIKit)
+        let controller = UIHostingController(rootView: self.resizable())
+        let view = controller.view
+        let targetSize = CGSize(width: 1024, height: 1024)
+        view?.bounds = CGRect(origin: .zero, size: targetSize)
+        view?.backgroundColor = .clear
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        return renderer.image { _ in
+            view?.drawHierarchy(in: view?.bounds ?? .zero, afterScreenUpdates: true)
+        }
+        #else
+        return nil
+        #endif
     }
 }
 
@@ -563,5 +543,81 @@ struct ComicViewerView_Previews: PreviewProvider {
         navigation.generatedComic = previewComic
         
         return ComicViewerView(navigation: navigation)
+    }
+} 
+
+// Add a full screen zoomable comic view
+import UIKit
+
+struct FullScreenComicView: View {
+    let image: UIImage?
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            if let image = image {
+                ZoomableComicImage(image: image)
+            } else {
+                Image(systemName: "photo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            Button(action: { isPresented = false }) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(.white)
+                    .shadow(radius: 8)
+                    .padding()
+            }
+        }
+    }
+}
+
+struct ZoomableComicImage: UIViewRepresentable {
+    let image: UIImage
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.minimumZoomScale = 1.0
+        scrollView.maximumZoomScale = 5.0
+        scrollView.backgroundColor = .black
+        scrollView.delegate = context.coordinator
+
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFit
+        imageView.clipsToBounds = true
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+
+        scrollView.addSubview(imageView)
+        context.coordinator.imageView = imageView
+
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            imageView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            imageView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            imageView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+        ])
+
+        return scrollView
+    }
+
+    func updateUIView(_ uiView: UIScrollView, context: Context) {
+        // No update needed, image is static
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject, UIScrollViewDelegate {
+        var imageView: UIImageView?
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+            return imageView
+        }
     }
 } 

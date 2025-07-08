@@ -60,32 +60,59 @@ struct ScenarioUpdateRequest: Codable {
 struct DetailedScenario: Codable, Identifiable {
     let id: Int
     let comicId: Int
-    let detailedScenario: String
-    let characterDescriptions: [String: String]
-    let plotSummary: String
-    let themes: [String]
-    let complexity: ScenarioComplexity
-    let targetAudience: TargetAudience
-    let createdAt: String
-    let updatedAt: String
-    let worldType: WorldType
-    let plotPoints: [PlotPoint]
-    let characterRoles: [CharacterRole]
+    let scenario_data: String
+    let concept: String?
+    let genre: String?
+    let world_type: String?
+    let word_count: Int?
+    let user_id: Int?
+    let updated_at: String?
+    let is_public: Bool?
+    let title: String?
+    let art_style: String?
+    let reading_time_minutes: Int?
+    let created_at: String?
+    let is_favorite: Bool?
     
     enum CodingKeys: String, CodingKey {
         case id
         case comicId = "comic_id"
-        case detailedScenario = "detailed_scenario"
-        case characterDescriptions = "character_descriptions"
-        case plotSummary = "plot_summary"
-        case themes, complexity
-        case targetAudience = "target_audience"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
-        case worldType = "world_type"
-        case plotPoints = "plot_points"
-        case characterRoles = "character_roles"
+        case scenario_data
+        case concept
+        case genre
+        case world_type
+        case word_count
+        case user_id
+        case updated_at
+        case is_public
+        case title
+        case art_style
+        case reading_time_minutes
+        case created_at
+        case is_favorite
+    
+}
+    
+    // Helper to decode scenario_data into ScenarioData struct
+    func decodedScenarioData() -> ScenarioData? {
+        guard let data = scenario_data.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(ScenarioData.self, from: data)
     }
+    // Helper to decode scenario_data into a [String: Any] dictionary for flexible display
+    var scenarioDataDict: [String: Any]? {
+        guard let data = scenario_data.data(using: .utf8) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
+}
+
+struct ScenarioData: Codable {
+    let title: String?
+    let genre: String?
+    let artStyle: String?
+    let characters: [String]?
+    let premise: String?
+    let setting: String?
+    // Add more fields as needed
 }
 
 struct ScenarioSaveResponse: Codable {
@@ -438,49 +465,7 @@ enum AnalysisImpact: String, CaseIterable, Codable {
     }
 }
 
-// MARK: - Preview Data
-#if DEBUG
-extension DetailedScenario {
-    static let preview = DetailedScenario(
-        id: 1,
-        comicId: 1,
-        detailedScenario: "A young hero discovers a magical artifact that grants incredible powers, but also attracts dangerous enemies. They must learn to control their new abilities while protecting their loved ones.",
-        characterDescriptions: [
-            "Hero": "A brave but inexperienced young person with a strong moral compass",
-            "Mentor": "A wise old wizard who guides the hero",
-            "Villain": "A dark sorcerer seeking the artifact's power"
-        ],
-        plotSummary: "Classic hero's journey with magical elements",
-        themes: ["courage", "growth", "responsibility", "friendship"],
-        complexity: .moderate,
-        targetAudience: .teens,
-        createdAt: "2024-01-15T10:30:00Z",
-        updatedAt: "2024-01-15T10:30:00Z",
-        worldType: .imaginationWorld,
-        plotPoints: [
-            PlotPoint(
-                id: 1,
-                sequence: 1,
-                title: "Discovery",
-                description: "Hero finds the magical artifact",
-                type: .incitingIncident,
-                characters: ["Hero"],
-                significance: .critical
-            )
-        ],
-        characterRoles: [
-            CharacterRole(
-                id: 1,
-                name: "Hero",
-                description: "The main protagonist",
-                role: .protagonist,
-                personality: ["brave", "curious", "determined"],
-                relationships: ["Mentor": "student"],
-                significance: .essential
-            )
-        ]
-    )
-}
+
 
 extension ScenarioTemplate {
     static let preview = ScenarioTemplate(
@@ -529,4 +514,4 @@ extension ScenarioTemplate {
         rating: 4.2
     )
 }
-#endif 
+

@@ -1,119 +1,156 @@
 import SwiftUI
 
-// MARK: - WorldsView
 struct WorldsView: View {
     @ObservedObject var navigation: NavigationViewModel
+    @State private var twinkle = false
 
     var body: some View {
-        VStack(spacing: 0) { // Main VStack to hold content and bottom bar
-            // ZStack for background and world selections
-            ZStack {
-                // Background: Space/Galaxy theme as per Figma
-                // Replace with your actual image asset like Image("space_background")
-                LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.8), Color.blue.opacity(0.8)]), startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .edgesIgnoringSafeArea(.all)
+        ZStack {
+            // 🌌 Background gradient — soft but flat feel
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(hex: "#FCDADA"),
+                    Color(hex: "#D7A8F0")
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-                // Content: World selections
-                VStack(spacing: 40) {
-                    Text("Explore Your Worlds")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .shadow(radius: 5)
-                        .padding(.top, 20)
-
-                    Spacer()
-
-                    // Dream World
-                    WorldSelectionButton(
-                        title: "Planet of Dreams",
-                        description: "Your dream novels & dreamboards",
-                        color: Color.pink.opacity(0.7)
-                    ) {
-                        navigation.currentScreen = .dreamWorld
-                    }
-
-                    // Mind World
-                    WorldSelectionButton(
-                        title: "Planet of Mind",
-                        description: "Your graphic essays & reflections",
-                        color: Color.green.opacity(0.7)
-                    ) {
-                        navigation.currentScreen = .mindWorld
-                    }
-
-                    // Script World (Planet of Fantasy/Creativity)
-                    WorldSelectionButton(
-                        title: "Planet of Fantasy",
-                        description: "Your comic projects, manga pages, and visual drafts",
-                        color: Color.orange.opacity(0.7)
-                    ) {
-                        navigation.currentScreen = .imaginationWorld
-                    }
-
-                    Spacer()
-                }
-                .padding(.horizontal)
+            // ✨ Light twinkling stars
+            ForEach(0..<20, id: \.self) { _ in
+                Circle()
+                    .fill(Color.white.opacity(twinkle ? 0.25 : 0.5))
+                    .frame(width: 2, height: 2)
+                    .position(
+                        x: CGFloat.random(in: 0...UIScreen.main.bounds.width),
+                        y: CGFloat.random(in: 0...UIScreen.main.bounds.height * 0.75)
+                    )
             }
 
-            // Persistent Bottom Bar View, as seen in Figma and other views
-            BottombarView(navigation: navigation)
-                .frame(maxHeight: 80)
+            VStack(spacing: 40) {
+                Spacer().frame(height: 60)
+
+                // Title
+                Text("Explore Your Worlds")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.black)
+                    .padding(.bottom, 10)
+
+                // ✨ World Planet Buttons
+                VStack(spacing: 28) {
+                    WorldOrb2D(
+                        title: "Planet of Dreams",
+                        subtitle: "Dreamboards & novels",
+                        icon: "moon.stars",
+                        color: Color(hex: "#FFD6F5"),
+                        action: {
+                            navigation.currentScreen = .dreamWorld
+                        }
+                    )
+
+                    WorldOrb2D(
+                        title: "Planet of Mind",
+                        subtitle: "Essays & reflections",
+                        icon: "brain.head.profile",
+                        color: Color(hex: "#C5F3FF"),
+                        action: {
+                            navigation.currentScreen = .mindWorld
+                        }
+                    )
+
+                    WorldOrb2D(
+                        title: "Planet of Fantasy",
+                        subtitle: "Comics & manga",
+                        icon: "sparkles",
+                        color: Color(hex: "#FBC1FF"),
+                        action: {
+                            navigation.currentScreen = .imaginationWorld
+                        }
+                    )
+                }
+
+                Spacer()
+            }
+
+            // 🟪 Bottom bar
+            VStack(spacing: 0) {
+                Spacer()
+                BottombarView(navigation: navigation)
+
+            }
+            .ignoresSafeArea(.keyboard)
         }
-        .toolbar {
-            CustomTopBarContent(title: "", showBackButton: true, leadingAction: {
-                navigation.currentScreen = .mainDashboard // Or previous screen
-            })
+        .onAppear {
+            withAnimation(Animation.easeInOut(duration: 2).repeatForever()) {
+                twinkle.toggle()
+            }
         }
+
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-// MARK: - WorldSelectionButton (Reusable Helper View)
-struct WorldSelectionButton: View {
-    let title: String
-    let description: String
-    let color: Color
-    let action: () -> Void
+
+struct WorldOrb2D: View {
+    var title: String
+    var subtitle: String
+    var icon: String
+    var color: Color
+    var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack {
-                Circle() // Placeholder for planet image
-                    .fill(color)
-                    .frame(width: 60, height: 60)
-                    .overlay(
-                                                    Image(systemName: "sparkles") // Fixed: sparkles.square.fill doesn't exist
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    )
-                    .shadow(color: color.opacity(0.5), radius: 10, x: 0, y: 5)
+            HStack(spacing: 16) {
+                ZStack {
+                    Rectangle() // Pixelated orb background
+                        .fill(color.opacity(0.8))
+                        .frame(width: 60, height: 60)
+                        .overlay(
+                            Rectangle()
+                                .stroke(Color.white.opacity(0.4), lineWidth: 1) // White pixelated border
+                        )
 
-                VStack(alignment: .leading) {
-                    Text(title)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+                    Image(systemName: icon)
+                        .font(.system(size: 28, weight: .bold)) // Larger, bolder icon
+                        .foregroundColor(.white) // White icon
+                        .shadow(color: .black.opacity(0.3), radius: 1, x: 1, y: 1) // Subtle shadow
                 }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.custom("PixeloidSans", size: 18)) // Placeholder for pixel font
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 1, x: 1, y: 1)
+                    Text(subtitle)
+                        .font(.custom("PixeloidSans", size: 12)) // Placeholder for pixel font
+                        .foregroundColor(.white.opacity(0.8))
+                        .shadow(color: .black.opacity(0.2), radius: 1, x: 0.5, y: 0.5)
+                }
+
                 Spacer()
+
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.white)
+                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 16, weight: .bold)) // Bolder chevron
             }
-            .padding()
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(15)
+            .padding(12) // Reduced padding slightly
+            .background(Color(hex: "#483D8B").opacity(0.6)) // Dark slate blue, semi-transparent background
+            .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous)) // Less rounded corners
             .overlay(
                 RoundedRectangle(cornerRadius: 15)
-                    .stroke(color, lineWidth: 2)
+                    .stroke(Color(hex: "#BA55D3").opacity(0.7), lineWidth: 2) // Medium Orchid border
             )
         }
+        .padding(.horizontal, 16) // Slightly less horizontal padding
     }
 }
 
-// MARK: - Preview
+// Extension to handle Hex Colors
+
+
 #Preview {
     WorldsView(navigation: NavigationViewModel())
 }

@@ -45,7 +45,7 @@ class NavigationViewModel: ObservableObject {
     
     func showDetailedScenario(with scenario: DetailedScenario) {
         print("📱 NavigationViewModel.showDetailedScenario called")
-        print("📱 Scenario plot summary: '\(scenario.plotSummary)'")
+        print("📱 Scenario plot summary: '\(scenario.decodedScenarioData())'")
         selectedScenario = scenario
         currentScreen = .detailedScenario
         print("📱 selectedScenario set and navigated to detailedScenario")

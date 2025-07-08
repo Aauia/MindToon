@@ -119,7 +119,7 @@ struct ComicSaveRequest: Codable {
     }
 }
 
-struct ComicGenerationResponse: Codable, Identifiable {
+struct ComicGenerationResponse: Codable, Identifiable, Equatable {
     let id: Int
     let title: String
     let concept: String

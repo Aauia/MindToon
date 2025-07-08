@@ -19,9 +19,8 @@ class ComicGeneratorViewModel: ObservableObject {
     @Published var availableArtStyles: [String] = []
     @Published var isWorldSelectionPresented: Bool = false
     @Published var showAdvancedOptions: Bool = false
-    @Published var genre: String = "adventure"
-    @Published var artStyle: String = "comic book"
-
+    @Published var generatedScenario: String? = nil // Now stores the premise string
+    
     private let apiClient = APIClient.shared
     private let didGenerateComicSubject = PassthroughSubject<ComicGenerationResponse, Never>()
     weak var navigation: NavigationViewModel?
@@ -31,9 +30,28 @@ class ComicGeneratorViewModel: ObservableObject {
     }
     
     init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
         Task {
             await loadAvailableOptions()
         }
+    }
+    
+    @objc private func handleLogout() {
+        comicTitle = ""
+        scriptText = ""
+        selectedGenre = "adventure"
+        selectedArtStyle = "comic book"
+        selectedWorld = .imaginationWorld
+        includeDetailedScenario = false
+        isLoading = false
+        errorMessage = nil
+        generatedComic = nil
+        availableGenres = []
+        availableArtStyles = []
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Enhanced Methods
@@ -67,29 +85,29 @@ class ComicGeneratorViewModel: ObservableObject {
             print("🎨 Generating comic '\(comicTitle)' for \(worldType.displayName)...")
             
             // First, enhance the script with scenario generation
-            // print("📝 Enhancing script with AI scenario generation...")
-            // var finalScript = scriptText
+            print("📝 Enhancing script with AI scenario generation...")
+            var finalScript = scriptText
             //
-            // do {
-            //     let scenarioResponse = try await apiClient.generateScenario(message: scriptText)
-            //     finalScript = scenarioResponse.scenario
-            //     print("✨ Enhanced script: \(finalScript.prefix(100))...")
-            //     print("🎭 Detected genre: \(scenarioResponse.genre)")
-            //     
-            //     // Update genre if backend suggests something different
-            //     if selectedGenre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
-            //         selectedGenre = scenarioResponse.genre.lowercased()
-            //         print("🎭 Updated genre to: \(selectedGenre)")
-            //     }
-            //     
-            // } catch {
-            //     print("❌ Scenario generation failed, using original script...")
-            //     print("🔄 Scenario error: \(error)")
-            //     // Continue with original script
-            // }
+            do {
+                 let scenarioResponse = try await apiClient.generateScenario(message: scriptText)
+                 finalScript = scenarioResponse.scenario
+                 print("✨ Enhanced script: \(finalScript.prefix(100))...")
+                 print("🎭 Detected genre: \(scenarioResponse.genre)")
+                 
+                 // Update genre if backend suggests something different
+                 if selectedGenre == "adventure" && scenarioResponse.genre.lowercased() != "adventure" {
+                     selectedGenre = scenarioResponse.genre.lowercased()
+                     print("🎭 Updated genre to: \(selectedGenre)")
+                 }
+                 
+             } catch {
+                 print("❌ Scenario generation failed, using original script...")
+                 print("🔄 Scenario error: \(error)")
+                 // Continue with original script
+             }
             
             // Use only the concept (scriptText) for now
-            let finalScript = scriptText
+            
             
             print("🎨 Starting comic generation...")
             print("📝 Original script length: \(finalScript.count) characters")
@@ -111,7 +129,7 @@ class ComicGeneratorViewModel: ObservableObject {
             }
             
             print("🎨 About to send to backend with concept length: \(truncatedConcept.count)")
-            
+            print("DEBUG: Sending genre: \(selectedGenre), artStyle: \(selectedArtStyle)")
             let saveRequest = ComicSaveRequest(
                 title: comicTitle,
                 concept: truncatedConcept,
@@ -136,8 +154,19 @@ class ComicGeneratorViewModel: ObservableObject {
             didGenerateComicSubject.send(comic)
             
             print("✅ Comic successfully generated and saved to \(worldType.displayName)!")
-            
-            // Navigate to comic viewer
+            generatedScenario = nil // Reset before fetching
+            if comic.hasDetailedScenario {
+                print("🔎 Fetching detailed scenario for comic ID: \(comic.id)")
+                do {
+                    let premise = try await apiClient.getScenarioByComic(comicId: comic.id, token: token)
+                    print("✅ Detailed scenario fetched, storing in generatedScenario")
+                    generatedScenario = premise
+                } catch {
+                    print("❌ Failed to fetch detailed scenario: \(error)")
+                    generatedScenario = nil
+                }
+            }
+            // Always navigate to comic viewer
             print("🚀 Navigating to comic viewer...")
             navigation?.showComicViewer(with: comic)
             print("🚀 Navigation call completed")

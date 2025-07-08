@@ -57,9 +57,21 @@ class ScenarioViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
         Task {
             await loadUserScenarios()
         }
+    }
+    
+    @objc private func handleLogout() {
+        scenarios = []
+        selectedScenario = nil
+        isLoading = false
+        errorMessage = nil
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Scenario Loading
@@ -85,31 +97,7 @@ class ScenarioViewModel: ObservableObject {
         
         isLoading = false
     }
-    
-    func loadScenarioForComic(_ comicId: Int) async {
-        do {
-            let token = await AuthManager.shared.getStoredToken()
-            guard let token = token else {
-                throw APIError.unauthorized
-            }
-            
-            let scenario = try await apiClient.getScenarioByComic(comicId: comicId, token: token)
-            selectedScenario = scenario
-            
-            // Update editor state with loaded scenario
-            editorState.detailedScenario = scenario.detailedScenario
-            editorState.characterDescriptions = scenario.characterDescriptions
-            editorState.plotSummary = scenario.plotSummary
-            editorState.themes = scenario.themes
-            
-            print("✅ Loaded scenario for comic \(comicId)")
-        } catch {
-            let apiError = error as? APIError ?? APIError.networkError(error)
-            errorMessage = apiError.userFriendlyMessage
-            ErrorLogger.shared.log(apiError, context: "Loading scenario for comic \(comicId)")
-        }
-    }
-    
+  
     func refreshScenarios() async {
         await loadUserScenarios()
     }
@@ -126,11 +114,7 @@ class ScenarioViewModel: ObservableObject {
         currentComicId = scenario.comicId
         
         // Load scenario data into editor
-        editorState.detailedScenario = scenario.detailedScenario
-        editorState.characterDescriptions = scenario.characterDescriptions
-        editorState.plotSummary = scenario.plotSummary
-        editorState.themes = scenario.themes
-        editorState.selectedThemes = Set(scenario.themes)
+    
         
         isEditingScenario = true
     }
@@ -266,37 +250,9 @@ class ScenarioViewModel: ObservableObject {
     }
     
     // MARK: - Filtering and Search
-    var filteredScenarios: [DetailedScenario] {
-        scenarios
-            .filter { scenario in
-                // Search text filter
-                if !searchText.isEmpty {
-                    let searchLower = searchText.lowercased()
-                    let scenarioMatch = scenario.detailedScenario.lowercased().contains(searchLower)
-                    let plotMatch = scenario.plotSummary.lowercased().contains(searchLower)
-                    let characterMatch = scenario.characterDescriptions.values.joined().lowercased().contains(searchLower)
-                    if !scenarioMatch && !plotMatch && !characterMatch {
-                        return false
-                    }
-                }
-                
-                // Theme filter
-                if selectedThemeFilter != "All" {
-                    if !scenario.themes.contains(selectedThemeFilter) {
-                        return false
-                    }
-                }
-                
-                return true
-            }
-            .sorted { $0.createdAt > $1.createdAt }
-    }
+
     
-    var availableThemes: [String] {
-        let allThemes = scenarios.flatMap { $0.themes }
-        let uniqueThemes = Array(Set(allThemes)).sorted()
-        return ["All"] + uniqueThemes
-    }
+ 
     
     func clearSearch() {
         searchText = ""
@@ -309,37 +265,7 @@ class ScenarioViewModel: ObservableObject {
         searchText = ""
     }
     
-    // MARK: - Scenario Analysis
-    func analyzeScenario(_ scenario: DetailedScenario) -> ScenarioAnalysis {
-        // This would ideally call a backend service for AI analysis
-        // For now, we'll create a basic analysis
-        
-        let characters = scenario.characterDescriptions.map { (name, description) in
-            CharacterRole(
-                id: UUID().hashValue,
-                name: name,
-                description: description,
-                role: .supporting, // Would be determined by AI analysis
-                personality: extractTraits(from: description),
-                relationships: [:],
-                significance: .moderate
-            )
-        }
-        
-        let plotPoints = generateBasicPlotPoints(from: scenario.detailedScenario)
-        
-        return ScenarioAnalysis(
-            scenarioId: scenario.id,
-            overallScore: 7.5,
-            strengths: [],
-            improvements: [],
-            themeConsistency: 8.0,
-            characterDevelopment: 7.0,
-            plotCoherence: 8.5,
-            pacing: 7.5,
-            suggestions: []
-        )
-    }
+
     
     // MARK: - Helper Methods
     private func resetEditorState() {
@@ -370,20 +296,7 @@ class ScenarioViewModel: ObservableObject {
         }
     }
     
-    private func determineComplexity(scenario: DetailedScenario) -> ScenarioComplexity {
-        let characterCount = scenario.characterDescriptions.count
-        let wordCount = scenario.detailedScenario.components(separatedBy: .whitespacesAndNewlines).count
-        let themeCount = scenario.themes.count
-        
-        let complexityScore = characterCount + (wordCount / 100) + (themeCount * 2)
-        
-        switch complexityScore {
-        case 0...5: return .simple
-        case 6...15: return .moderate
-        case 16...30: return .complex
-        default: return .masterful
-        }
-    }
+
     
     private func determineMood(from scenario: String) -> String {
         let scenarioLower = scenario.lowercased()
@@ -448,9 +361,7 @@ extension ScenarioViewModel {
     static func preview() -> ScenarioViewModel {
         let viewModel = ScenarioViewModel()
         
-        viewModel.scenarios = [
-            DetailedScenario.preview
-        ]
+       
         
         return viewModel
     }

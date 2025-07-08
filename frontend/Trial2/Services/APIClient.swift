@@ -9,8 +9,8 @@ class APIClient {
     // Custom URLSession with increased timeout
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 120 // seconds
-        config.timeoutIntervalForResource = 120 // seconds
+        config.timeoutIntervalForRequest = 420 // seconds (5 minutes)
+        config.timeoutIntervalForResource = 420 // seconds (5 minutes)
         return URLSession(configuration: config)
     }()
     
@@ -501,26 +501,36 @@ class APIClient {
         return try JSONDecoder().decode(ScenarioSaveResponse.self, from: data)
     }
     
-    func getScenarioByComic(comicId: Int, token: String) async throws -> DetailedScenario {
-        let url = URL(string: "\(baseURLString)/api/chats/scenarios/comic/\(comicId)")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let (data, response) = try await session.data(for: request)
-        
+    func getScenarioByComic(comicId: Int, token: String) async throws -> String {
+        print("[getScenarioByComic] Step 1: Input comicId = \(comicId)")
+        let (data, response) = try await rawScenarioByComic(comicId: comicId, token: token)
+        print("[getScenarioByComic] Step 2: rawScenarioByComic call complete")
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("[getScenarioByComic] Error: Invalid response")
             throw APIError.invalidResponse
         }
-        
         if httpResponse.statusCode != 200 {
+            print("[getScenarioByComic] Error: Server error \(httpResponse.statusCode)")
             let errorData = ErrorHandler.parseServerError(data: data, statusCode: httpResponse.statusCode)
             throw errorData
         }
-        
-        return try JSONDecoder().decode(DetailedScenario.self, from: data)
+        guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+              let scenarioDataString = json["scenario_data"] as? String else {
+            print("[getScenarioByComic] Error: scenario_data field not found in response")
+            throw APIError.serverErrorMessage("scenario_data field not found in response")
+        }
+        print("[getScenarioByComic] Step 3: scenario_data extracted successfully.")
+        // Parse scenario_data as JSON and extract 'premise'
+        if let scenarioDataJson = scenarioDataString.data(using: .utf8),
+           let scenarioDict = try? JSONSerialization.jsonObject(with: scenarioDataJson, options: []) as? [String: Any],
+           let premise = scenarioDict["premise"] as? String {
+            print("[getScenarioByComic] Step 4: premise extracted: \(premise)")
+            return premise
+        } else {
+            print("[getScenarioByComic] Error: premise field not found in scenario_data")
+            throw APIError.serverErrorMessage("premise field not found in scenario_data")
+        }
     }
-    
     func getUserScenarios(limit: Int, offset: Int, token: String) async throws -> [DetailedScenario] {
         var urlComponents = URLComponents(string: "\(baseURLString)/api/chats/scenarios")!
         urlComponents.queryItems = [
@@ -1136,3 +1146,13 @@ extension APIClient {
         }
     }
 } 
+extension APIClient {
+    func rawScenarioByComic(comicId: Int, token: String) async throws -> (Data, URLResponse) {
+        let url = URL(string: "\(baseURLString)/api/chats/scenarios/comic/\(comicId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        return (data, response)
+    }
+}

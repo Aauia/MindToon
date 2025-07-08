@@ -49,7 +49,7 @@ struct ImaginationWorldView: View {
                                 QuickActionButton(
                                     title: "New Comic",
                                     icon: "plus.circle.fill",
-                                    color: .blue
+                                    color: Color.purple
                                 ) {
                                     navigation.currentScreen = .comicGenerator
                                 }
@@ -57,7 +57,7 @@ struct ImaginationWorldView: View {
                                 QuickActionButton(
                                     title: "View All",
                                     icon: "square.grid.2x2",
-                                    color: .green
+                                    color: Color.orange
                                 ) {
                                     // Toggle to show all comics
                                     viewModel.showFavoritesOnly.toggle()
@@ -66,7 +66,7 @@ struct ImaginationWorldView: View {
                                 QuickActionButton(
                                     title: "Favorites",
                                     icon: "heart.fill",
-                                    color: .pink
+                                    color: Color.pink
                                 ) {
                                     viewModel.showFavoritesOnly = true
                                 }
@@ -94,7 +94,7 @@ struct ImaginationWorldView: View {
                                         navigation.currentScreen = .comicGenerator
                                     }
                                     .padding()
-                                    .background(Color.blue)
+                                    .background(Color.purple)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .padding(.top)
@@ -118,7 +118,7 @@ struct ImaginationWorldView: View {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
                                     .padding()
-                                    .background(Color.white.opacity(0.8))
+                                    .background(Color.clear)
                                     .cornerRadius(10)
                                     .padding(.horizontal)
                             }
@@ -129,12 +129,15 @@ struct ImaginationWorldView: View {
                 
                 // Bottom bar
                 BottombarView(navigation: navigation)
-                    .frame(maxHeight: 80)
             }
             .toolbar {
-                CustomTopBarContent(title: "", showBackButton: true, leadingAction: {
-                    navigation.currentScreen = .worlds
-                })
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { navigation.currentScreen = .worlds }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.primary)
+                    }
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -169,7 +172,7 @@ struct StatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color.white.opacity(0.2))
+        .background(Color.black.opacity(0.12))
         .cornerRadius(10)
     }
 }
@@ -281,7 +284,7 @@ struct ComicCardView: View {
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
             }
-            .background(Color.white.opacity(0.1))
+            .background(Color.clear)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)

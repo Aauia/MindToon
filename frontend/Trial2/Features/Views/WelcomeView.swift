@@ -1,60 +1,61 @@
 import SwiftUI
-// MARK: - WelcomeView
+
+
 struct WelcomeView: View {
     @StateObject var viewModel: WelcomeViewModel
     @ObservedObject var navigation: NavigationViewModel
 
-    init(viewModel: WelcomeViewModel, navigation: NavigationViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-        self.navigation = navigation
-    }
-
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        ZStack {
+            Color(red: 0.75, green: 0.67, blue: 0.95).ignoresSafeArea()
+            PixelSkyView()
+           
 
-            Text(viewModel.appTitle)
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.primary)
+            // Foreground content
+            VStack(spacing: 24) {
+                Spacer()
+                
+                VStack(spacing: 8) {
+                    Text("MindToon")
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                        .shadow(color: Color.purple.opacity(0.2), radius: 2, x: 0, y: 2)
+                    Text("Enter your comic galaxy...")
+                        .font(.title3)
+                        .foregroundColor(Color(red: 1.0, green: 0.9, blue: 1.0))
+                        .shadow(color: Color.purple.opacity(0.1), radius: 1, x: 0, y: 1)
+                }
+                .padding(.bottom, 8)
 
-            Text(viewModel.appSubtitle)
-                .font(.title2)
-                .fontWeight(.medium)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
+                Spacer()
 
-            Text(viewModel.welcomeMessage)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            Button(action: {
-                navigation.currentScreen = .login
-            }) {
-                Text(viewModel.mainCallToAction)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.purple)
-                    .cornerRadius(15)
+                Button(action: {
+                    navigation.currentScreen = .login
+                }) {
+                    Text("Get Started")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 16)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(red: 0.7, green: 0.4, blue: 0.9))
+                        .cornerRadius(18)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.white.opacity(0.7), lineWidth: 2)
+                        )
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 60)
             }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 50)
         }
-        .padding()
-                        .background(Color(red: 1.0, green: 1.0, blue: 0.9))
     }
 }
 
 // MARK: - Preview
 struct WelcomeView_Previews: PreviewProvider {
     static var previews: some View {
-        WelcomeView(viewModel: WelcomeViewModel(), navigation: NavigationViewModel())
+        NavigationView {
+            WelcomeView(viewModel: WelcomeViewModel(), navigation: NavigationViewModel())
+        }
     }
 }

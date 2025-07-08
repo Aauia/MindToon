@@ -32,6 +32,7 @@
 		6858985E2E16854800EF17D0 /* RegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6858985D2E16854800EF17D0 /* RegistrationView.swift */; };
 		685898602E16858000EF17D0 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6858985F2E16858000EF17D0 /* RootView.swift */; };
 		685898642E1685FD00EF17D0 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685898632E1685FD00EF17D0 /* LoginView.swift */; };
+		68860BB22E1DA1A9003F50BF /* TestScenarioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68860BB12E1DA1A9003F50BF /* TestScenarioView.swift */; };
 		68CC377C2E15F38100BC00D1 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68CC377B2E15F38100BC00D1 /* APIModels.swift */; };
 		68CC377E2E15F3AF00BC00D1 /* CollectionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68CC377D2E15F3AF00BC00D1 /* CollectionModels.swift */; };
 		68CC37802E15F3C500BC00D1 /* ErrorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68CC377F2E15F3C500BC00D1 /* ErrorModels.swift */; };
@@ -52,6 +53,8 @@
 		68D161A32E0E59FC00BAEEF5 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D161A22E0E59FC00BAEEF5 /* AuthManager.swift */; };
 		68D161A72E0E5A8F00BAEEF5 /* BackendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D161A62E0E5A8F00BAEEF5 /* BackendView.swift */; };
 		68DDA1D42E0DC1A4004B2CCC /* NavigationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DDA1D32E0DC1A4004B2CCC /* NavigationViewModel.swift */; };
+		68E0158C2E1C6D0900B87E6D /* FlyingGhost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E0158B2E1C6D0900B87E6D /* FlyingGhost.swift */; };
+		68F06FF72E1C61EE00F030B1 /* PixelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F06FF62E1C61EE00F030B1 /* PixelsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,6 +84,7 @@
 		6858985D2E16854800EF17D0 /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
 		6858985F2E16858000EF17D0 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		685898632E1685FD00EF17D0 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		68860BB12E1DA1A9003F50BF /* TestScenarioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestScenarioView.swift; sourceTree = "<group>"; };
 		68CC377B2E15F38100BC00D1 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
 		68CC377D2E15F3AF00BC00D1 /* CollectionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionModels.swift; sourceTree = "<group>"; };
 		68CC377F2E15F3C500BC00D1 /* ErrorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorModels.swift; sourceTree = "<group>"; };
@@ -101,6 +105,8 @@
 		68D161A22E0E59FC00BAEEF5 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		68D161A62E0E5A8F00BAEEF5 /* BackendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendView.swift; sourceTree = "<group>"; };
 		68DDA1D32E0DC1A4004B2CCC /* NavigationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationViewModel.swift; sourceTree = "<group>"; };
+		68E0158B2E1C6D0900B87E6D /* FlyingGhost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlyingGhost.swift; sourceTree = "<group>"; };
+		68F06FF62E1C61EE00F030B1 /* PixelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,6 +248,9 @@
 				6858985D2E16854800EF17D0 /* RegistrationView.swift */,
 				6858985F2E16858000EF17D0 /* RootView.swift */,
 				685898632E1685FD00EF17D0 /* LoginView.swift */,
+				68F06FF62E1C61EE00F030B1 /* PixelsView.swift */,
+				68E0158B2E1C6D0900B87E6D /* FlyingGhost.swift */,
+				68860BB12E1DA1A9003F50BF /* TestScenarioView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -338,7 +347,9 @@
 				682AC0A32E09277F00171857 /* WelcomeView.swift in Sources */,
 				68CC37942E15F60B00BC00D1 /* ImageGeneratorView.swift in Sources */,
 				682AC0A12E09275C00171857 /* WelcomeViewModel.swift in Sources */,
+				68E0158C2E1C6D0900B87E6D /* FlyingGhost.swift in Sources */,
 				68CC378A2E15F4C300BC00D1 /* WorldManager.swift in Sources */,
+				68860BB22E1DA1A9003F50BF /* TestScenarioView.swift in Sources */,
 				68CC37882E15F4A000BC00D1 /* TestingService.swift in Sources */,
 				68CC37822E15F3DC00BC00D1 /* ScenarioModels.swift in Sources */,
 				682AC09C2E0924E500171857 /* LoadingViewable.swift in Sources */,
@@ -355,6 +366,7 @@
 				68CC379A2E15F6AA00BC00D1 /* ScenarioViewModel.swift in Sources */,
 				682AC0B82E09456600171857 /* DreamWorldView.swift in Sources */,
 				682AC0B42E093B2500171857 /* ComicGeneratorViewModel.swift in Sources */,
+				68F06FF72E1C61EE00F030B1 /* PixelsView.swift in Sources */,
 				68CC377C2E15F38100BC00D1 /* APIModels.swift in Sources */,
 				68D161A32E0E59FC00BAEEF5 /* AuthManager.swift in Sources */,
 				682AC0822E0921AA00171857 /* Trial2App.swift in Sources */,

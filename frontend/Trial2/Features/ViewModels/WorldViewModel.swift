@@ -67,8 +67,21 @@ class WorldViewModel: ObservableObject {
     }
     
     init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
         setupBindings()
         initializeWorldData()
+    }
+    
+    @objc private func handleLogout() {
+        worldComics = [:]
+        worldStats = [:]
+        selectedWorld = .imaginationWorld
+        isLoading = false
+        errorMessage = nil
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Setup

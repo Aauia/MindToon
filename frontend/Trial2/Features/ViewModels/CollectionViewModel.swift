@@ -76,10 +76,22 @@ class CollectionViewModel: ObservableObject {
     }
     
     init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
         setupBindings()
         Task {
             await loadInitialData()
         }
+    }
+    
+    @objc private func handleLogout() {
+        collections = []
+        selectedCollection = nil
+        isLoading = false
+        errorMessage = nil
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Setup
