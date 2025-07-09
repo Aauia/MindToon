@@ -56,7 +56,14 @@ struct MainDashboardView: View {
                 }
                 .padding(.top, 60)
 
-                Spacer()
+                // Animated typewriter text below the moon
+                TypewriterText(text: "Welcome to MindToon! Unleash your imagination, one comic at a time.")
+                    .font(.custom("ComicNeue-Bold", size: 22))
+                    .foregroundColor(Color(hex: "#5A3FA0"))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 24)
+                    .padding(.horizontal, 32)
+                
             }
 
             // Pixel City + Reflection
@@ -81,23 +88,37 @@ struct MainDashboardView: View {
                 
             }
             
-            .padding(.bottom, 72) // leave space for bottom bar
+            .padding(.bottom, 72)
             .frame(maxHeight: .infinity, alignment: .bottom)
-            
-            // 🟪 Bottom bar
+
+            // 🟪 Bottom bar (styled and width-matched to WorldsView)
             VStack(spacing: 0) {
                 Spacer()
                 BottombarView(navigation: navigation)
+                    .frame(maxWidth: 420)
+                    .padding(.horizontal, 16)
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(20)
+                    .shadow(color: Color.black.opacity(0.1), radius: 8, y: -2)
+                    .frame(maxWidth: .infinity)
+                        .background(Color(hex: "#5A3FA0"))
                 
-                // --- TEST: Fetch Detailed Scenario by Comic ID ---
-              
-                // --- END TEST ---
+                
             }
+            
+            
             .ignoresSafeArea(.keyboard)
         }
         .onAppear {
             Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { _ in
                 twinkleToggle.toggle()
+            }
+            // DEBUG: Print all available font names
+            for family in UIFont.familyNames.sorted() {
+                print("Family: \(family)")
+                for name in UIFont.fontNames(forFamilyName: family) {
+                    print("  Font: \(name)")
+                }
             }
         }
     }
@@ -106,6 +127,34 @@ struct MainDashboardView: View {
 struct MainDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         MainDashboardView(navigation: NavigationViewModel())
+    }
+}
+
+
+// MARK: - TypewriterText View
+struct TypewriterText: View {
+    let text: String
+    @State private var displayedText = ""
+    @State private var charIndex = 0
+    let typingInterval = 0.045
+
+    var body: some View {
+        Text(displayedText)
+            .onAppear {
+                displayedText = ""
+                charIndex = 0
+                typeNextChar()
+            }
+    }
+
+    private func typeNextChar() {
+        guard charIndex < text.count else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + typingInterval) {
+            let nextIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+            displayedText = String(text[..<nextIndex])
+            charIndex += 1
+            typeNextChar()
+        }
     }
 }
 

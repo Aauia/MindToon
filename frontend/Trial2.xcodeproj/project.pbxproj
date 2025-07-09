@@ -85,6 +85,9 @@
 		6858985F2E16858000EF17D0 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		685898632E1685FD00EF17D0 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		68860BB12E1DA1A9003F50BF /* TestScenarioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestScenarioView.swift; sourceTree = "<group>"; };
+		689003872E1E79E900E6ADAC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../../../../Info.plist; sourceTree = "<group>"; };
+		68B06E712E1E6898007A2A4A /* ComicNeue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ComicNeue-Bold.ttf"; sourceTree = "<group>"; };
+		68B06E722E1E69D4007A2A4A /* ComicNeue-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ComicNeue-Regular.ttf"; path = "../../../../../../../Downloads/Comic_Neue-2/ComicNeue-Regular.ttf"; sourceTree = "<group>"; };
 		68CC377B2E15F38100BC00D1 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
 		68CC377D2E15F3AF00BC00D1 /* CollectionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionModels.swift; sourceTree = "<group>"; };
 		68CC377F2E15F3C500BC00D1 /* ErrorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorModels.swift; sourceTree = "<group>"; };
@@ -139,6 +142,8 @@
 		682AC0802E0921AA00171857 /* Trial2 */ = {
 			isa = PBXGroup;
 			children = (
+				689003872E1E79E900E6ADAC /* Info.plist */,
+				68B06E6F2E1E681F007A2A4A /* Fonts */,
 				682AC0962E0922EB00171857 /* Features */,
 				682AC0932E0922BA00171857 /* Services */,
 				682AC0922E0922AF00171857 /* Models */,
@@ -253,6 +258,15 @@
 				68860BB12E1DA1A9003F50BF /* TestScenarioView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		68B06E6F2E1E681F007A2A4A /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				68B06E722E1E69D4007A2A4A /* ComicNeue-Regular.ttf */,
+				68B06E712E1E6898007A2A4A /* ComicNeue-Bold.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

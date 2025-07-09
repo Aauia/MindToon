@@ -57,40 +57,7 @@ struct ProfileView: View {
                                 .padding(.horizontal)
                         }
 
-                        // Account Settings Section
-                        VStack(alignment: .leading, spacing: 15) {
-                            ProfileOptionRow(icon: "gearshape.fill", title: "Account Settings") {
-                                print("Navigate to Account Settings - (ViewModel action needed)")
-                                // You would call a viewModel method here or directly navigate
-                                // For example: viewModel.navigateToAccountSettings()
-                            }
-                            ProfileOptionRow(icon: "lock.fill", title: "Privacy & Security") {
-                                print("Navigate to Privacy Settings - (ViewModel action needed)")
-                            }
-                            ProfileOptionRow(icon: "bell.fill", title: "Notifications") {
-                                print("Navigate to Notification Settings - (ViewModel action needed)")
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 30)
-
-                        // Content & History Section
-                        VStack(alignment: .leading, spacing: 15) {
-                            ProfileOptionRow(icon: "book.closed.fill", title: "My Comics Library") {
-                                print("Navigate to My Comics Library - (ViewModel action needed)")
-                            }
-                            ProfileOptionRow(icon: "bookmark.fill", title: "Saved Ideas") {
-                                print("Navigate to Saved Ideas - (ViewModel action needed)")
-                            }
-                            ProfileOptionRow(icon: "folder.fill", title: "My Collections") {
-                                navigation.navigateTo(.collections)
-                            }
-                            ProfileOptionRow(icon: "doc.text.fill", title: "My Scenarios") {
-                                navigation.navigateTo(.scenarios)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 20)
+               
                         
                         // Account Management Section (New)
                         VStack(alignment: .leading, spacing: 15) {
