@@ -124,10 +124,3 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 
-# Cache
-.cache/
-cache/
-
-# Temporary files
-*.tmp
-*.temp backup_full.sql
