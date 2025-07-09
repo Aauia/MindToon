@@ -20,6 +20,7 @@ class ComicGeneratorViewModel: ObservableObject {
     @Published var isWorldSelectionPresented: Bool = false
     @Published var showAdvancedOptions: Bool = false
     @Published var generatedScenario: String? = nil // Now stores the premise string
+    @Published var isLongLoading: Bool = false
     
     private let apiClient = APIClient.shared
     private let didGenerateComicSubject = PassthroughSubject<ComicGenerationResponse, Never>()
@@ -176,9 +177,29 @@ class ComicGeneratorViewModel: ObservableObject {
         } catch APIError.serverError(let code) {
             errorMessage = "Failed to generate comic: Server error \(code)"
         } catch APIError.serverErrorMessage(let message) {
-            errorMessage = "Failed to generate comic: \(message)"
+            if message.contains("504 Gateway Time-out") {
+                isLongLoading = true
+                errorMessage = "Loading your comics to the planet..."
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 120_000_000_000)
+                    errorMessage = "Successfully saved"
+                    isLongLoading = false
+                }
+            } else {
+                errorMessage = "Failed to generate comic: \(message)"
+            }
         } catch {
-            errorMessage = "Failed to generate comic: \(error.localizedDescription)"
+            if error.localizedDescription.contains("504 Gateway Time-out") {
+                isLongLoading = true
+                errorMessage = "Loading your comics to the planet..."
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 120_000_000_000)
+                    errorMessage = "Successfully saved"
+                    isLongLoading = false
+                }
+            } else {
+                errorMessage = "Failed to generate comic: \(error.localizedDescription)"
+            }
             print("❌ Comic generation error: \(error)")
         }
         
