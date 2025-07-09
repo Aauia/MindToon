@@ -130,4 +130,4 @@ cache/
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp backup_full.sql
