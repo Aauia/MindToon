@@ -56,14 +56,7 @@ struct MainDashboardView: View {
                 }
                 .padding(.top, 60)
 
-                // Animated typewriter text below the moon
-                TypewriterText(text: "Welcome to MindToon! Unleash your imagination, one comic at a time.")
-                    .font(.custom("ComicNeue-Bold", size: 22))
-                    .foregroundColor(Color(hex: "#5A3FA0"))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 24)
-                    .padding(.horizontal, 32)
-                
+                Spacer()
             }
 
             // Pixel City + Reflection
@@ -88,11 +81,22 @@ struct MainDashboardView: View {
                 
             }
             
-            .padding(.bottom, 72)
+            
+            
+            .padding(.bottom, 72) // leave space for bottom bar
             .frame(maxHeight: .infinity, alignment: .bottom)
+            // Animated typewriter text below the moon
+            TypewriterText(text: "Welcome to MindToon! Unleash your imagination, one comic at a time.")
+                .font(.custom("Noteworthy", size: 22))
+                .foregroundColor(Color.black)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 56)
+                .padding(.bottom, 16)
+               
 
-            // 🟪 Bottom bar (styled and width-matched to WorldsView)
-            VStack(spacing: 0) {
+            
+            // 🟪 Bottom bar
+       VStack(spacing: 0) {
                 Spacer()
                 BottombarView(navigation: navigation)
                     .frame(maxWidth: 420)
@@ -106,19 +110,11 @@ struct MainDashboardView: View {
                 
             }
             
-            
             .ignoresSafeArea(.keyboard)
         }
         .onAppear {
             Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { _ in
                 twinkleToggle.toggle()
-            }
-            // DEBUG: Print all available font names
-            for family in UIFont.familyNames.sorted() {
-                print("Family: \(family)")
-                for name in UIFont.fontNames(forFamilyName: family) {
-                    print("  Font: \(name)")
-                }
             }
         }
     }
@@ -130,8 +126,6 @@ struct MainDashboardView_Previews: PreviewProvider {
     }
 }
 
-
-// MARK: - TypewriterText View
 struct TypewriterText: View {
     let text: String
     @State private var displayedText = ""
@@ -157,5 +151,4 @@ struct TypewriterText: View {
         }
     }
 }
-
 
