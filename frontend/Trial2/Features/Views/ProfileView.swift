@@ -59,14 +59,27 @@ struct ProfileView: View {
 
                
                         
+                        // About Section (New)
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("About")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.black)
+                            ProfileOptionRow(icon: "lock.shield", title: "Privacy Policy") {
+                                if let url = URL(string: "https://github.com/Aauia/MindToonPrivacy/blob/main/privacy-policy.md") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 20)
+
                         // Account Management Section (New)
                         VStack(alignment: .leading, spacing: 15) {
                             Text("Account Management")
                                 .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.black)
-                                .padding(.horizontal)
-                            
                             ProfileOptionRow(icon: "trash.fill", title: "Delete Account", isDestructive: true) {
                                 viewModel.showAccountDeletion()
                             }
