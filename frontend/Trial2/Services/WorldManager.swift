@@ -26,6 +26,23 @@ class WorldManager: ObservableObject {
     
     private init() {
         initializeWorlds()
+        NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
+    }
+
+    @objc private func handleLogout() {
+        clearCache()
+        worlds = [:]
+        worldStats = [:]
+        worldAnalytics = [:]
+        isLoading = false;
+        errorMessage = nil;
+        currentPage = [:]
+        hasMorePages = [:]
+        initializeWorlds() // Optionally re-initialize empty structure
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Initialization
