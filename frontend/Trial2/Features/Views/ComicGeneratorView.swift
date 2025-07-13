@@ -214,15 +214,16 @@ struct ComicGeneratorView: View {
 
                             // Action Buttons as per screenshot
                             VStack(spacing: 25) {
-                                ActionButton(title: "Edit Script", iconName: "pencil.circle.fill", action: viewModel.editScript)
-                                ActionButton(title: "Enhance Scenario", iconName: "text.bubble.fill") {
+                             
+                      
+                                ActionButton(
+                                    title: "Generate Comic",
+                                    iconName: "arrow.forward.circle.fill",
+                                    isPrimary: true,
+                                    isLoading: viewModel.isLoading,
+                                    isDisabled: viewModel.comicTitle.isEmpty // or other validation logic
+                                ) {
                                     Task {
-                                        await viewModel.generateScenario()
-                                    }
-                                }
-                                ActionButton(title: "Add Tone/Mood Suggestions", iconName: "sparkles", action: viewModel.addToneMoodSuggestions)
-                                ActionButton(title: "Generate Comic", iconName: "arrow.forward.circle.fill", isPrimary: true) {
-                                    Task { // Use Task to call async function
                                         await viewModel.generateComicWithWorld(worldType: selectedWorld)
                                     }
                                 }
@@ -232,13 +233,22 @@ struct ComicGeneratorView: View {
 
                             // Loading Indicator during AI generation
                             if viewModel.isLoading {
-                                ProgressView("Generating...")
+                                ProgressView("it may take sometime please wait...")
                                     .padding()
                                     .frame(maxWidth: .infinity)
                             }
 
-                            // Error Message display
-                            if let errorMessage = viewModel.errorMessage {
+                            // Long Loading UI for 504 Gateway Timeout
+                            if viewModel.isLongLoading {
+                                VStack(spacing: 16) {
+                                    ProgressView()
+                                    Text(viewModel.errorMessage ?? "")
+                                        .font(.headline)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                            } else if let errorMessage = viewModel.errorMessage {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
                                     .padding()
@@ -412,26 +422,39 @@ struct ActionButton: View {
     let title: String
     let iconName: String
     var isPrimary: Bool = false
+    var isLoading: Bool = false
+    var isDisabled: Bool = false
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            if !isLoading && !isDisabled {
+                action()
+            }
+        }) {
             HStack {
                 Spacer()
-                Image(systemName: iconName)
-                    .font(isPrimary ? .title : .title2)
-                    .foregroundColor(isPrimary ? .white : .purple)
-                Text(title)
-                    .font(isPrimary ? .headline : .body)
-                    .fontWeight(isPrimary ? .bold : .medium)
-                    .foregroundColor(isPrimary ? .white : .primary)
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: isPrimary ? .white : .purple))
+                } else {
+                    Image(systemName: iconName)
+                        .font(isPrimary ? .title : .title2)
+                        .foregroundColor(isPrimary ? .white : .purple)
+                    Text(title)
+                        .font(isPrimary ? .headline : .body)
+                        .fontWeight(isPrimary ? .bold : .medium)
+                        .foregroundColor(isPrimary ? .white : .primary)
+                }
                 Spacer()
             }
             .padding(.vertical, 15)
             .background(isPrimary ? Color.purple : Color.white)
             .cornerRadius(10)
             .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 5)
+            .opacity(isDisabled ? 0.5 : 1.0)
         }
+        .disabled(isLoading || isDisabled)
     }
 }
 
@@ -457,3 +480,4 @@ extension WorldType {
         )
     }
 }
+ 

@@ -54,22 +54,7 @@ struct ImaginationWorldView: View {
                                     navigation.currentScreen = .comicGenerator
                                 }
                                 
-                                QuickActionButton(
-                                    title: "View All",
-                                    icon: "square.grid.2x2",
-                                    color: Color.orange
-                                ) {
-                                    // Toggle to show all comics
-                                    viewModel.showFavoritesOnly.toggle()
-                                }
-                                
-                                QuickActionButton(
-                                    title: "Favorites",
-                                    icon: "heart.fill",
-                                    color: Color.pink
-                                ) {
-                                    viewModel.showFavoritesOnly = true
-                                }
+                            
                             }
                             .padding(.horizontal)
                             

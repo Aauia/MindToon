@@ -24,6 +24,7 @@ class AuthManager: ObservableObject {
     private let tokenKey = "access_token"
     private let userKey = "current_user"
     
+    
     private init() {
         checkAuthStatus()
     }

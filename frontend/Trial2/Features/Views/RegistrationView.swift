@@ -99,10 +99,3 @@ VStack(spacing: 24) {
     }
 }
 
-struct RegistrationView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            RegistrationView(navigation: NavigationViewModel(), authManager: .preview)
-        }
-    }
-}

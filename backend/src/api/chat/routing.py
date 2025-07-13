@@ -7,14 +7,18 @@ from api.db import get_session
 from api.auth.models import User
 from api.auth.utils import get_current_user
 from api.ai.schemas import ScenarioSchema, ComicsPageSchema, ScenarioSchema2, ComicGenerationRequest, ComicSaveRequest, ComicGenerationResponse, WorldComicsRequest, WorldStatsResponse, ComicCollectionRequest, ComicCollectionResponse, ScenarioSaveRequest, DetailedScenarioSchema
-from api.ai.services import generate_scenario, generate_comic_scenario, generate_complete_comic, generate_image_from_prompt, generate_detailed_scenario_from_comic
+from api.ai.services import generate_scenario, generate_comic_scenario, generate_complete_comic, generate_image_from_prompt
 from pydantic import BaseModel
 from datetime import datetime
 import io
 import base64
 import json
 from api.chat.models import ChatMessage, DetailedScenario
-
+from fastapi import APIRouter, HTTPException #
+import asyncio
+from sqlalchemy.future import select
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel.ext.asyncio.session import AsyncSession # Use AsyncSess
 router = APIRouter()
 
 # Request/Response models
@@ -68,10 +72,7 @@ class ChatMessagePayload(BaseModel):
     message: str
 
 # Existing scenario endpoint
-@router.post("/scenario/", response_model=ScenarioSchema)
-def create_scenario(payload: ChatMessagePayload):
-    response = generate_scenario(payload.message)
-    return response
+
 
 # Enhanced comic generation endpoint with saving
 @router.post("/generate-comic")
@@ -88,13 +89,13 @@ async def generate_comic_endpoint(
         print(f"🎨 Generating comic for concept: {request.concept}")
         
         # Generate the complete comic (AI determines genre and art_style from concept)
-        comic_page, comic_image, detailed_scenario = generate_complete_comic(
-            concept=request.concept,
-            genre=request.genre,
-            art_style=request.art_style,
-            include_detailed_scenario=request.include_detailed_scenario
-        )
-        
+        comic_page, comic_image, detailed_scenario = await generate_complete_comic(
+        concept=request.concept,
+        genre=request.genre,
+        art_style=request.art_style,
+        include_detailed_scenario=request.include_detailed_scenario
+    )
+            
         # Upload comic image to Supabase Storage
         from api.supabase.client import supabase_client
         
@@ -196,12 +197,12 @@ async def generate_comic_with_data_endpoint(
         print(f"🎨 Generating comic with data for: {request.concept}")
         
         # Generate the complete comic (AI determines genre and art_style from concept)
-        comic_page, comic_image, detailed_scenario = generate_complete_comic(
-            concept=request.concept,
-            genre=request.genre,
-            art_style=request.art_style,
-            include_detailed_scenario=request.include_detailed_scenario
-        )
+        comic_page, comic_image, detailed_scenario = await generate_complete_comic(
+        concept=request.concept,
+        genre=request.genre,
+        art_style=request.art_style,
+        include_detailed_scenario=request.include_detailed_scenario
+    )
         
         # Upload comic image to Supabase Storage
         from api.supabase.client import supabase_client
@@ -281,7 +282,9 @@ async def generate_comic_with_data_endpoint(
             "created_at": new_comic.created_at.isoformat(),
             "is_favorite": new_comic.is_favorite,
             "is_public": new_comic.is_public,
-            "has_detailed_scenario": has_detailed_scenario
+            "has_detailed_scenario": has_detailed_scenario,
+            "image_url": supabase_image_url # <-- ADD THIS LINE
+            
         }
         
     except Exception as e:
@@ -548,7 +551,7 @@ async def test_improved_comic():
         print("🤖 AI will optimize this into 6 panels and determine genre/art style")
         
         # Generate the complete comic (AI determines genre and art_style)
-        comic_page, comic_image, detailed_scenario = generate_complete_comic(
+        comic_page, comic_image, detailed_scenario = await generate_complete_comic(
             concept=test_concept,
             genre=None,  # Let AI determine
             art_style=None,  # Let AI determine
@@ -656,63 +659,65 @@ async def get_world_comics(
     request: WorldComicsRequest,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
-):
-    """Get comics from a specific world for the current user"""
+) -> List[ComicGenerationResponse]:
+    """Get comics from a specific world for the current user (Optimized & Fixed)"""
     try:
-        # Calculate offset for pagination
-        offset = (request.page - 1) * request.per_page
-        
-        # Build query
-        query = select(ComicsPage).where(
-            ComicsPage.user_id == current_user.id,
-            ComicsPage.world_type == request.world_type
+        # The query remains the same to keep the N+1 performance fix
+        query = (
+            select(
+                ComicsPage,
+                (DetailedScenario.id != None).label("has_detailed_scenario")
+            )
+            .join(DetailedScenario, ComicsPage.id == DetailedScenario.comic_id, isouter=True)
+            .where(
+                ComicsPage.user_id == current_user.id,
+                ComicsPage.world_type == request.world_type
+            )
         )
-        
-        # Add favorites filter if requested
+
         if request.favorites_only:
             query = query.where(ComicsPage.is_favorite == True)
+
+        # STEP 2: Remove the unnecessary count query
+        # (The code for total_comics has been deleted)
+
+        # Apply pagination and ordering
+        offset = (request.page - 1) * request.per_page
+        data_query = query.order_by(ComicsPage.created_at.desc()).offset(offset).limit(request.per_page)
+
+        results = session.exec(data_query).all()
         
-        # Add pagination and ordering
-        query = query.offset(offset).limit(request.per_page).order_by(ComicsPage.created_at.desc())
+        # Format the response list
+        comics_list = []
+        for row in results:
+            comic = row.ComicsPage
+            has_scenario = row.has_detailed_scenario
+            
+            comics_list.append(ComicGenerationResponse(
+                id=comic.id,
+                title=comic.title,
+                concept=comic.concept,
+                genre=comic.genre,
+                art_style=comic.art_style,
+                world_type=comic.world_type,
+                image_url=comic.image_url, 
+                panels_data=json.loads(comic.panels_data) if comic.panels_data else {},
+                created_at=comic.created_at.isoformat(),
+                is_favorite=comic.is_favorite,
+                is_public=comic.is_public,
+                has_detailed_scenario=has_scenario
+            ))
         
-        # Execute query with limit to prevent large data loads
-        comics = session.exec(query).all()
-        
-        # Convert to response format with error handling
-        result = []
-        for comic in comics:
-            try:
-                panels_data = json.loads(comic.panels_data) if comic.panels_data else {}
-                # Check if a detailed scenario exists for this comic
-                has_detailed_scenario = session.exec(
-                    select(DetailedScenario).where(DetailedScenario.comic_id == comic.id)
-                ).first() is not None
-                result.append(ComicGenerationResponse(
-                    id=comic.id,
-                    title=comic.title,
-                    concept=comic.concept,
-                    genre=comic.genre,
-                    art_style=comic.art_style,
-                    world_type=comic.world_type,
-                    image_url=comic.image_url, 
-                    panels_data=panels_data,
-                    created_at=comic.created_at.isoformat(),
-                    is_favorite=comic.is_favorite,
-                    is_public=comic.is_public,
-                    has_detailed_scenario=has_detailed_scenario
-                ))
-            except Exception as e:
-                print(f"⚠️ Error processing comic {comic.id}: {e}")
-                # Skip problematic comics instead of failing the entire request
-                continue
-        
-        return result
+        # STEP 3: Return the simple list directly
+        return comics_list
         
     except Exception as e:
+        import traceback
         print(f"❌ Error fetching world comics: {str(e)}")
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to fetch comics: {str(e)}"
+            detail="An unexpected error occurred while fetching comics."
         )
 
 @router.get("/world-stats/{world_type}", response_model=WorldStatsResponse)
@@ -729,7 +734,7 @@ async def get_world_stats(
                 ComicsPage.user_id == current_user.id,
                 ComicsPage.world_type == world_type
             )
-        ).one()
+        ).one()[0]
         
         # Count favorite comics
         favorite_comics = session.exec(
@@ -738,7 +743,7 @@ async def get_world_stats(
                 ComicsPage.world_type == world_type,
                 ComicsPage.is_favorite == True
             )
-        ).one()
+        ).one()[0]
         
         # Count public comics
         public_comics = session.exec(
@@ -747,7 +752,7 @@ async def get_world_stats(
                 ComicsPage.world_type == world_type,
                 ComicsPage.is_public == True
             )
-        ).one()
+        ).one()[0]
         
         # Count collections for this world
         total_collections = session.exec(
@@ -755,7 +760,7 @@ async def get_world_stats(
                 ComicCollection.user_id == current_user.id,
                 ComicCollection.world_type == world_type
             )
-        ).one()
+        ).one()[0]
         
         return WorldStatsResponse(
             world_type=world_type,
@@ -860,7 +865,7 @@ async def test_generate_comic_no_auth(request: ComicRequest):
         print(f"🧪 TEST: Generating comic for concept: {request.concept}")
         
         # Generate the complete comic
-        comic_page, comic_image, detailed_scenario = generate_complete_comic(
+        comic_page, comic_image, detailed_scenario = await generate_complete_comic(
             concept=request.concept,
             genre=request.genre,
             art_style=request.art_style,
@@ -1145,127 +1150,5 @@ def get_scenario_with_comic(
         "comic": comic,
         "combined_title": f"{comic.title} - Story"
     }
-
-@router.post("/comic/{comic_id}/generate-detailed-scenario")
-def generate_detailed_scenario_for_comic(
-    comic_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-) -> dict:
-    """Generate a detailed narrative scenario for an existing comic.
-    
-    This allows users to request a rich literary story based on their already created comic,
-    rather than generating it during comic creation.
-    """
-    try:
-        print(f"📖 Generating detailed scenario for comic ID: {comic_id}")
-        
-        # Get the comic
-        comic = session.query(ComicsPage).filter(
-            ComicsPage.id == comic_id,
-            ComicsPage.user_id == current_user.id
-        ).first()
-        
-        if not comic:
-            raise HTTPException(status_code=404, detail="Comic not found")
-        
-        # Check if a detailed scenario already exists for this comic
-        existing_scenario = session.query(DetailedScenario).filter(
-            DetailedScenario.comic_id == comic_id
-        ).first()
-        
-        if existing_scenario:
-            print(f"⚠️ Detailed scenario already exists for comic {comic_id}")
-            return {
-                "message": "Detailed scenario already exists for this comic",
-                "scenario_id": existing_scenario.id,
-                "existing": True
-            }
-        
-        # Parse the comic panels data to reconstruct the scenario
-        panels_data = json.loads(comic.panels_data) if comic.panels_data else []
-        
-        # Reconstruct a scenario object from the comic data
-        from api.ai.schemas import ScenarioSchema2, FrameDescription, Dialogue
-        
-        # Create frame descriptions from comic panels
-        frames = []
-        for panel in panels_data:
-            # Parse dialogues (this might be a simple string, so we need to handle it)
-            dialogues = []
-            if panel.get('dialogue'):
-                # Simple case: single dialogue string, create a basic dialogue object
-                dialogues.append(Dialogue(
-                    speaker="Character",
-                    text=panel['dialogue'],
-                    type="speech",
-                    emotion="normal",
-                    position="center"
-                ))
-            
-            frame = FrameDescription(
-                frame_number=panel.get('panel', 1),
-                description=panel.get('image_prompt', ''),
-                dialogues=dialogues,
-                camera_shot="medium shot",
-                speaker_position_in_panel="center",
-                dialogue_emotion="normal",
-                sfx=[],
-                panel_emphasis=False,
-                mood="dramatic"
-            )
-            frames.append(frame)
-        
-        # Create a scenario object
-        comic_scenario = ScenarioSchema2(
-            title=comic.title,
-            genre=comic.genre,
-            characters=["Character"],  # We don't have character info, use generic
-            art_style=comic.art_style,
-            frames=frames
-        )
-        
-        # Generate the detailed scenario based on the comic
-        detailed_scenario = generate_detailed_scenario_from_comic(
-            comic_scenario=comic_scenario,
-            original_concept=comic.concept,
-            genre=comic.genre,
-            art_style=comic.art_style
-        )
-        
-        # Save the detailed scenario to database
-        new_scenario = DetailedScenario(
-            comic_id=comic.id,
-            title=detailed_scenario.title,
-            concept=comic.concept,
-            genre=detailed_scenario.genre,
-            art_style=detailed_scenario.art_style,
-            world_type=comic.world_type,
-            scenario_data=json.dumps(detailed_scenario.dict()),
-            word_count=detailed_scenario.word_count,
-            reading_time_minutes=detailed_scenario.reading_time_minutes,
-            user_id=current_user.id
-        )
-        session.add(new_scenario)
-        session.commit()
-        session.refresh(new_scenario)
-        
-        print(f"✅ Detailed scenario generated and saved with ID: {new_scenario.id}")
-        
-        return {
-            "message": "Detailed scenario generated successfully",
-            "scenario_id": new_scenario.id,
-            "title": detailed_scenario.title,
-            "word_count": detailed_scenario.word_count,
-            "reading_time_minutes": detailed_scenario.reading_time_minutes,
-            "created_at": new_scenario.created_at.isoformat(),
-            "existing": False
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"❌ Error generating detailed scenario for comic: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate detailed scenario: {str(e)}")
 
 

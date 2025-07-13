@@ -28,3 +28,4 @@ aiofiles
 uuid
 opencv-python-headless
 numpy
+aiohttp

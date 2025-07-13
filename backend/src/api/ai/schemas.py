@@ -145,6 +145,7 @@ class ComicGenerationResponse(BaseModel):
     is_favorite: Optional[bool] = None
     is_public: Optional[bool] = None
     has_detailed_scenario: Optional[bool] = None
+    
 
 class WorldComicsRequest(BaseModel):
     world_type: WorldType

@@ -85,10 +85,3 @@ struct LoginView: View {
     }
 }
 
-struct LoginView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            LoginView(navigation: NavigationViewModel(), authManager: AuthManager.preview)
-        }
-    }
-}

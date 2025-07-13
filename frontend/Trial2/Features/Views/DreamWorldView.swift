@@ -57,21 +57,6 @@ struct DreamWorldView: View {
                                     navigation.currentScreen = .comicGenerator
                                 }
 
-                                QuickActionButton(
-                                    title: "View All",
-                                    icon: "square.grid.2x2",
-                                    color: Color(red: 0.85, green: 0.73, blue: 0.94) // lavender
-                                ) {
-                                    viewModel.showFavoritesOnly = false
-                                }
-
-                                QuickActionButton(
-                                    title: "Favorites",
-                                    icon: "heart.fill",
-                                    color: Color(red: 0.99, green: 0.85, blue: 0.85) // peach
-                                ) {
-                                    viewModel.showFavoritesOnly = true
-                                }
                             }
                             .padding(.horizontal)
 

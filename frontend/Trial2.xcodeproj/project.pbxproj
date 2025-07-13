@@ -59,7 +59,7 @@
 
 /* Begin PBXFileReference section */
 		68261B1F2E12A71200330A4B /* ComicViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComicViewerView.swift; sourceTree = "<group>"; };
-		682AC07E2E0921AA00171857 /* Trial2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Trial2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		682AC07E2E0921AA00171857 /* MindToon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindToon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		682AC0812E0921AA00171857 /* Trial2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trial2App.swift; sourceTree = "<group>"; };
 		682AC0832E0921AA00171857 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		682AC0852E0921AC00171857 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -85,7 +85,6 @@
 		6858985F2E16858000EF17D0 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		685898632E1685FD00EF17D0 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		68860BB12E1DA1A9003F50BF /* TestScenarioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestScenarioView.swift; sourceTree = "<group>"; };
-		689003872E1E79E900E6ADAC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../../../../Info.plist; sourceTree = "<group>"; };
 		68B06E712E1E6898007A2A4A /* ComicNeue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ComicNeue-Bold.ttf"; sourceTree = "<group>"; };
 		68B06E722E1E69D4007A2A4A /* ComicNeue-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ComicNeue-Regular.ttf"; path = "../../../../../../../Downloads/Comic_Neue-2/ComicNeue-Regular.ttf"; sourceTree = "<group>"; };
 		68CC377B2E15F38100BC00D1 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
@@ -134,7 +133,7 @@
 		682AC07F2E0921AA00171857 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				682AC07E2E0921AA00171857 /* Trial2.app */,
+				682AC07E2E0921AA00171857 /* MindToon.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,7 +141,6 @@
 		682AC0802E0921AA00171857 /* Trial2 */ = {
 			isa = PBXGroup;
 			children = (
-				689003872E1E79E900E6ADAC /* Info.plist */,
 				68B06E6F2E1E681F007A2A4A /* Fonts */,
 				682AC0962E0922EB00171857 /* Features */,
 				682AC0932E0922BA00171857 /* Services */,
@@ -272,9 +270,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		682AC07D2E0921AA00171857 /* Trial2 */ = {
+		682AC07D2E0921AA00171857 /* MindToon */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 682AC08C2E0921AC00171857 /* Build configuration list for PBXNativeTarget "Trial2" */;
+			buildConfigurationList = 682AC08C2E0921AC00171857 /* Build configuration list for PBXNativeTarget "MindToon" */;
 			buildPhases = (
 				682AC07A2E0921AA00171857 /* Sources */,
 				682AC07B2E0921AA00171857 /* Frameworks */,
@@ -284,9 +282,9 @@
 			);
 			dependencies = (
 			);
-			name = Trial2;
+			name = MindToon;
 			productName = Trial2;
-			productReference = 682AC07E2E0921AA00171857 /* Trial2.app */;
+			productReference = 682AC07E2E0921AA00171857 /* MindToon.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -317,7 +315,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				682AC07D2E0921AA00171857 /* Trial2 */,
+				682AC07D2E0921AA00171857 /* MindToon */,
 			);
 		};
 /* End PBXProject section */
@@ -426,6 +424,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = DJDVY4P58A;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -489,6 +488,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = DJDVY4P58A;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -518,24 +518,28 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Trial2/Preview Content\"";
-				DEVELOPMENT_TEAM = Z3ZCC3V7HS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.ayau.Trial2;
+				PRODUCT_BUNDLE_IDENTIFIER = co.ayau.MindToonAppUnique;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -547,24 +551,28 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Trial2/Preview Content\"";
-				DEVELOPMENT_TEAM = Z3ZCC3V7HS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.ayau.Trial2;
+				PRODUCT_BUNDLE_IDENTIFIER = co.ayau.MindToonAppUnique;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -580,7 +588,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		682AC08C2E0921AC00171857 /* Build configuration list for PBXNativeTarget "Trial2" */ = {
+		682AC08C2E0921AC00171857 /* Build configuration list for PBXNativeTarget "MindToon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				682AC08D2E0921AC00171857 /* Debug */,
