@@ -68,46 +68,19 @@ async def login_for_access_token(
         )
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    refresh_token_expires = timedelta(days=7)
+   
 
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    refresh_token = create_refresh_token(
-        data={"sub": user.username}, expires_delta=refresh_token_expires
-    )
+ 
+ 
 
     return {
         "access_token": access_token,
-        "refresh_token": refresh_token,
+       
         "token_type": "bearer"
     }
-@router.post("/refresh-token", response_model=Token)
-def refresh_access_token(
-    refresh_token: str,
-    session: Session = Depends(get_session)
-):
-    try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-
-        user = session.exec(select(User).where(User.username == username)).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-
-        new_access_token = create_access_token({"sub": username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-        new_refresh_token = create_refresh_token({"sub": username}, expires_delta=timedelta(days=7))
-
-        return {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "bearer"
-        }
-
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 
 @router.get("/me", response_model=UserRead)
