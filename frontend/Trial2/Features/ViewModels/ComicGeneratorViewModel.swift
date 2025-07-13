@@ -6,8 +6,8 @@ import Combine // Import Combine for @Published and PassthroughSubject
 class ComicGeneratorViewModel: ObservableObject {
     @Published var comicTitle: String = ""
     @Published var scriptText: String = ""
-    @Published var selectedGenre: String = "adventure"
-    @Published var selectedArtStyle: String = "comic book"
+    @Published var selectedGenre: String = "drama"
+    @Published var selectedArtStyle: String = "minimalist"
     @Published var selectedWorld: WorldType = .imaginationWorld
     @Published var includeDetailedScenario: Bool = false
     @Published var isLoading: Bool = false
@@ -181,7 +181,7 @@ class ComicGeneratorViewModel: ObservableObject {
                 isLongLoading = true
                 errorMessage = "Loading your comics to the planet..."
                 Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 120_000_000_000)
+                    try? await Task.sleep(nanoseconds: 9_000_000_000)
                     errorMessage = "Successfully saved"
                     isLongLoading = false
                 }
@@ -193,7 +193,7 @@ class ComicGeneratorViewModel: ObservableObject {
                 isLongLoading = true
                 errorMessage = "Loading your comics to the planet..."
                 Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 120_000_000_000)
+                    try? await Task.sleep(nanoseconds: 9_000_000_000)
                     errorMessage = "Successfully saved"
                     isLongLoading = false
                 }

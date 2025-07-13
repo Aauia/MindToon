@@ -250,7 +250,7 @@ struct ComicGeneratorView: View {
                                 .frame(maxWidth: .infinity)
                             } else if let errorMessage = viewModel.errorMessage {
                                 Text(errorMessage)
-                                    .foregroundColor(.red)
+                                    .foregroundColor(.green)
                                     .padding()
                                     .frame(maxWidth: .infinity)
                             }

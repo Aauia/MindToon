@@ -130,20 +130,56 @@ class WorldViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                await self.worldManager.loadWorldComics(
-                    for: .imaginationWorld,
-                    page: 1,
-                    refresh: refresh,
-                    favoritesOnly: self.showFavoritesOnly,
-                    sortBy: self.sortBy,
-                    searchTerm: self.searchText.isEmpty ? nil : self.searchText
-                )
+        switch selectedWorld {
+        case .imaginationWorld:
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    await self.worldManager.loadWorldComics(
+                        for: .imaginationWorld,
+                        page: 1,
+                        refresh: refresh,
+                        favoritesOnly: self.showFavoritesOnly,
+                        sortBy: self.sortBy,
+                        searchTerm: self.searchText.isEmpty ? nil : self.searchText
+                    )
+                }
+                group.addTask {
+                    await self.worldManager.loadWorldStats(for: .imaginationWorld, refresh: refresh)
+                }
             }
 
-            group.addTask {
-                await self.worldManager.loadWorldStats(for: .imaginationWorld, refresh: refresh)
+        case .dreamWorld:
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    await self.worldManager.loadWorldComics(
+                        for: .dreamWorld,
+                        page: 1,
+                        refresh: refresh,
+                        favoritesOnly: self.showFavoritesOnly,
+                        sortBy: self.sortBy,
+                        searchTerm: self.searchText.isEmpty ? nil : self.searchText
+                    )
+                }
+                group.addTask {
+                    await self.worldManager.loadWorldStats(for: .dreamWorld, refresh: refresh)
+                }
+            }
+
+        case .mindWorld:
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    await self.worldManager.loadWorldComics(
+                        for: .mindWorld,
+                        page: 1,
+                        refresh: refresh,
+                        favoritesOnly: self.showFavoritesOnly,
+                        sortBy: self.sortBy,
+                        searchTerm: self.searchText.isEmpty ? nil : self.searchText
+                    )
+                }
+                group.addTask {
+                    await self.worldManager.loadWorldStats(for: .mindWorld, refresh: refresh)
+                }
             }
         }
     }
