@@ -47,12 +47,11 @@ private struct DreamWorldInternalView: View {
                                     .padding(.horizontal)
                             }
                             .padding(.top, 20)
-
+                            
                             if let stats = viewModel.worldStats[.dreamWorld] {
                                 HStack(spacing: 20) {
                                     StatCard(title: "Total Comics", value: "\(stats.totalComics)", icon: "book.fill")
-                                    StatCard(title: "Favorites", value: "\(stats.favoriteComics)", icon: "heart.fill")
-                                    StatCard(title: "Public", value: "\(stats.publicComics)", icon: "globe")
+                                    
                                 }
                                 .padding(.horizontal)
                             }

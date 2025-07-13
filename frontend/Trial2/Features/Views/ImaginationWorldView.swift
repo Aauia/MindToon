@@ -50,8 +50,7 @@ private struct ImaginationWorldInternalView: View {
                             if let stats = viewModel.worldStats[.imaginationWorld] {
                                 HStack(spacing: 20) {
                                     StatCard(title: "Total Comics", value: "\(stats.totalComics)", icon: "book.fill")
-                                    StatCard(title: "Favorites", value: "\(stats.favoriteComics)", icon: "heart.fill")
-                                    StatCard(title: "Public", value: "\(stats.publicComics)", icon: "globe")
+                                 
                                 }
                                 .padding(.horizontal)
                             }
