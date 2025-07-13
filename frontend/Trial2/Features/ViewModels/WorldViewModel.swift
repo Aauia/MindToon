@@ -125,16 +125,29 @@ class WorldViewModel: ObservableObject {
     }
     
     // MARK: - Data Loading
-    func loadInitialData() async {
+    @MainActor
+    func loadInitialData(refresh: Bool = true) async {
+        isLoading = true
+        defer { isLoading = false }
+
         await withTaskGroup(of: Void.self) { group in
-            for worldType in WorldType.allCases {
-                group.addTask {
-                    await self.worldManager.loadWorldComics(for: worldType, page: 1)
-                    await self.worldManager.loadWorldStats(for: worldType)
-                }
+            group.addTask {
+                await self.worldManager.loadWorldComics(
+                    for: .imaginationWorld,
+                    page: 1,
+                    refresh: refresh,
+                    favoritesOnly: self.showFavoritesOnly,
+                    sortBy: self.sortBy,
+                    searchTerm: self.searchText.isEmpty ? nil : self.searchText
+                )
+            }
+
+            group.addTask {
+                await self.worldManager.loadWorldStats(for: .imaginationWorld, refresh: refresh)
             }
         }
     }
+
     
     func loadWorldComics(for worldType: WorldType, refresh: Bool = false) async {
         await worldManager.loadWorldComics(
@@ -190,6 +203,12 @@ class WorldViewModel: ObservableObject {
     
     // MARK: - Comic Management
     func addComicToCurrentWorld(_ comic: ComicGenerationResponse) {
+        // Update local state
+        var comics = worldComics[selectedWorld] ?? []
+        comics.insert(comic, at: 0)
+        worldComics[selectedWorld] = comics
+        
+        // Update WorldManager (source of truth)
         worldManager.addComicToWorld(comic, worldType: selectedWorld)
     }
     

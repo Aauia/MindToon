@@ -2,39 +2,51 @@ import SwiftUI
 
 struct ImaginationWorldView: View {
     @ObservedObject var navigation: NavigationViewModel
+    @State private var reloadToken = UUID()
+
+    var body: some View {
+        ImaginationWorldInternalView(navigation: navigation, reloadToken: reloadToken) {
+            reloadToken = UUID() // Triggers full view refresh
+        }
+        .id(reloadToken)
+    }
+}
+
+private struct ImaginationWorldInternalView: View {
+    @ObservedObject var navigation: NavigationViewModel
+    let reloadToken: UUID
+    let reloadAction: () -> Void
     @StateObject private var viewModel = WorldViewModel()
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Main content area
                 ZStack {
-                    // Background gradient for fantasy theme
                     LinearGradient(
                         gradient: Gradient(colors: [Color.orange.opacity(0.6), Color.purple.opacity(0.4)]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                     .edgesIgnoringSafeArea(.all)
-                    
+
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
-                            // Header section
+                            // Header
                             VStack(spacing: 10) {
                                 Text("Planet of Fantasy")
                                     .font(.largeTitle)
                                     .fontWeight(.bold)
                                     .foregroundColor(.white)
                                     .shadow(radius: 5)
-                                
+
                                 Text("Your comic projects, manga pages, and visual drafts")
                                     .foregroundColor(.white.opacity(0.9))
                                     .multilineTextAlignment(.center)
                                     .padding(.horizontal)
                             }
                             .padding(.top, 20)
-                            
-                            // Stats section
+
+                            // Stats
                             if let stats = viewModel.worldStats[.imaginationWorld] {
                                 HStack(spacing: 20) {
                                     StatCard(title: "Total Comics", value: "\(stats.totalComics)", icon: "book.fill")
@@ -43,7 +55,7 @@ struct ImaginationWorldView: View {
                                 }
                                 .padding(.horizontal)
                             }
-                            
+
                             // Quick actions
                             HStack(spacing: 15) {
                                 QuickActionButton(
@@ -53,17 +65,17 @@ struct ImaginationWorldView: View {
                                 ) {
                                     navigation.currentScreen = .comicGenerator
                                 }
-                                
-                            
                             }
                             .padding(.horizontal)
-                            
-                            // Comics grid
+
+                            // ✅ LOADING
                             if viewModel.isLoading {
                                 ProgressView("Loading comics...")
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                            } else if viewModel.filteredComics.isEmpty {
+                            }
+                            // ✅ EMPTY
+                            else if viewModel.filteredComics.isEmpty {
                                 VStack {
                                     Image(systemName: "sparkles")
                                         .font(.system(size: 60))
@@ -74,7 +86,7 @@ struct ImaginationWorldView: View {
                                     Text("Create your first comic adventure!")
                                         .font(.body)
                                         .foregroundColor(.white.opacity(0.6))
-                                    
+
                                     Button("Create Comic") {
                                         navigation.currentScreen = .comicGenerator
                                     }
@@ -86,40 +98,47 @@ struct ImaginationWorldView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 40)
-                            } else {
-                                LazyVGrid(columns: [
-                                    GridItem(.flexible()),
-                                    GridItem(.flexible())
-                                ], spacing: 15) {
+                            }
+                            // ✅ CONTENT
+                            else {
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                                     ForEach(viewModel.filteredComics, id: \.id) { comic in
                                         ComicCardView(comic: comic, navigation: navigation)
                                     }
                                 }
                                 .padding(.horizontal)
                             }
-                            
-                            // Error message
+
                             if let errorMessage = viewModel.errorMessage {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
-                                    .padding()
-                                    .background(Color.clear)
-                                    .cornerRadius(10)
                                     .padding(.horizontal)
                             }
                         }
                         .padding(.vertical)
                     }
                 }
-                
-                // Bottom bar
+
                 BottombarView(navigation: navigation)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { navigation.currentScreen = .worlds }) {
+                    Button(action: {
+                        navigation.currentScreen = .worlds
+                    }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
+                            .foregroundColor(.primary)
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        Task {
+                                await viewModel.loadInitialData(refresh: true)
+                            }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
                             .foregroundColor(.primary)
                     }
                 }
@@ -127,13 +146,14 @@ struct ImaginationWorldView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 viewModel.selectedWorld = .imaginationWorld
-                Task {
-                    await viewModel.loadInitialData()
-                }
+                    Task {
+                        await viewModel.loadInitialData(refresh: true)
+                    }
             }
         }
     }
 }
+
 
 // MARK: - Supporting Views
 

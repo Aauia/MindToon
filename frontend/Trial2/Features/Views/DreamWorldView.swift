@@ -2,18 +2,30 @@ import SwiftUI
 
 struct DreamWorldView: View {
     @ObservedObject var navigation: NavigationViewModel
+    @State private var reloadToken = UUID()
+
+    var body: some View {
+        DreamWorldInternalView(navigation: navigation, reloadToken: reloadToken) {
+            reloadToken = UUID()
+        }
+        .id(reloadToken)
+    }
+}
+
+private struct DreamWorldInternalView: View {
+    @ObservedObject var navigation: NavigationViewModel
+    let reloadToken: UUID
+    let reloadAction: () -> Void
     @StateObject private var viewModel = WorldViewModel()
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Main content area
                 ZStack {
-                    // Background gradient for dream theme
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(red: 0.85, green: 0.73, blue: 0.94), // lavender
-                            Color(red: 0.99, green: 0.85, blue: 0.92)  // blush (slightly pinker than peach)
+                            Color(red: 0.85, green: 0.73, blue: 0.94),
+                            Color(red: 0.99, green: 0.85, blue: 0.92)
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -22,7 +34,6 @@ struct DreamWorldView: View {
 
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
-                            // Header section
                             VStack(spacing: 10) {
                                 Text("Planet of Dreams")
                                     .font(.largeTitle)
@@ -37,7 +48,6 @@ struct DreamWorldView: View {
                             }
                             .padding(.top, 20)
 
-                            // Stats section
                             if let stats = viewModel.worldStats[.dreamWorld] {
                                 HStack(spacing: 20) {
                                     StatCard(title: "Total Comics", value: "\(stats.totalComics)", icon: "book.fill")
@@ -47,20 +57,17 @@ struct DreamWorldView: View {
                                 .padding(.horizontal)
                             }
 
-                            // Quick actions
                             HStack(spacing: 15) {
                                 QuickActionButton(
                                     title: "New Dream",
                                     icon: "plus.circle.fill",
-                                    color: Color(red: 0.7, green: 0.4, blue: 0.9) // muted purple
+                                    color: Color.purple
                                 ) {
                                     navigation.currentScreen = .comicGenerator
                                 }
-
                             }
                             .padding(.horizontal)
 
-                            // Comics grid
                             if viewModel.isLoading {
                                 ProgressView("Loading dreams...")
                                     .frame(maxWidth: .infinity)
@@ -81,7 +88,7 @@ struct DreamWorldView: View {
                                         navigation.currentScreen = .comicGenerator
                                     }
                                     .padding()
-                                    .background(Color(red: 0.7, green: 0.4, blue: 0.9)) // muted purple
+                                    .background(Color.purple)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .padding(.top)
@@ -100,13 +107,9 @@ struct DreamWorldView: View {
                                 .padding(.horizontal)
                             }
 
-                            // Error message
                             if let errorMessage = viewModel.errorMessage {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
-                                    .padding()
-                                    .background(Color.clear)
-                                    .cornerRadius(10)
                                     .padding(.horizontal)
                             }
                         }
@@ -114,31 +117,37 @@ struct DreamWorldView: View {
                     }
                 }
 
-                // Bottom bar
                 BottombarView(navigation: navigation)
             }
-            // ✅ Proper native navigation bar toolbar
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { navigation.currentScreen = .worlds }) {
+                    Button(action: {
+                        navigation.currentScreen = .worlds
+                    }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
                             .foregroundColor(.primary)
                     }
                 }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        Task {
+                            await viewModel.loadInitialData(refresh: true)
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.primary)
+                    }
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
-            // ❌ Don't hide navigation bar if you want toolbar to show
             .onAppear {
                 viewModel.selectedWorld = .dreamWorld
                 Task {
-                    await viewModel.loadInitialData()
+                    await viewModel.loadInitialData(refresh: true)
                 }
             }
         }
     }
-}
-
-#Preview {
-    DreamWorldView(navigation: NavigationViewModel())
 }

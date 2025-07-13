@@ -2,42 +2,52 @@ import SwiftUI
 
 struct MindWorldView: View {
     @ObservedObject var navigation: NavigationViewModel
+    @State private var reloadToken = UUID()
+
+    var body: some View {
+        MindWorldInternalView(navigation: navigation, reloadToken: reloadToken) {
+            reloadToken = UUID()
+        }
+        .id(reloadToken)
+    }
+}
+
+private struct MindWorldInternalView: View {
+    @ObservedObject var navigation: NavigationViewModel
+    let reloadToken: UUID
+    let reloadAction: () -> Void
     @StateObject private var viewModel = WorldViewModel()
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Main content area
                 ZStack {
-                    // Background gradient for mind theme
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(red: 0.78, green: 0.85, blue: 0.97), // soft blue-lavender
-                            Color(red: 0.80, green: 0.97, blue: 0.92)  // minty aqua
+                            Color(red: 0.78, green: 0.85, blue: 0.97),
+                            Color(red: 0.80, green: 0.97, blue: 0.92)
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                     .edgesIgnoringSafeArea(.all)
-                    
+
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
-                            // Header section
                             VStack(spacing: 10) {
                                 Text("Planet of Mind")
                                     .font(.largeTitle)
                                     .fontWeight(.bold)
                                     .foregroundColor(.white)
                                     .shadow(radius: 5)
-                                
+
                                 Text("Your graphic essays & reflections")
                                     .foregroundColor(.white.opacity(0.9))
                                     .multilineTextAlignment(.center)
                                     .padding(.horizontal)
                             }
                             .padding(.top, 20)
-                            
-                            // Stats section
+
                             if let stats = viewModel.worldStats[.mindWorld] {
                                 HStack(spacing: 20) {
                                     StatCard(title: "Total Comics", value: "\(stats.totalComics)", icon: "book.fill")
@@ -46,22 +56,18 @@ struct MindWorldView: View {
                                 }
                                 .padding(.horizontal)
                             }
-                            
-                            // Quick actions
+
                             HStack(spacing: 15) {
                                 QuickActionButton(
                                     title: "New Essay",
                                     icon: "plus.circle.fill",
-                                    color: Color(red: 0.7, green: 0.4, blue: 0.9) // muted purple
+                                    color: Color.purple
                                 ) {
                                     navigation.currentScreen = .comicGenerator
                                 }
-                              
-                                
                             }
                             .padding(.horizontal)
-                            
-                            // Comics grid
+
                             if viewModel.isLoading {
                                 ProgressView("Loading thoughts...")
                                     .frame(maxWidth: .infinity)
@@ -77,12 +83,12 @@ struct MindWorldView: View {
                                     Text("Create your first reflective story!")
                                         .font(.body)
                                         .foregroundColor(.white.opacity(0.6))
-                                    
+
                                     Button("Create Mind Comic") {
                                         navigation.currentScreen = .comicGenerator
                                     }
                                     .padding()
-                                    .background(Color(red: 0.7, green: 0.4, blue: 0.9)) // muted purple
+                                    .background(Color.purple)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .padding(.top)
@@ -100,29 +106,37 @@ struct MindWorldView: View {
                                 }
                                 .padding(.horizontal)
                             }
-                            
-                            // Error message
+
                             if let errorMessage = viewModel.errorMessage {
                                 Text(errorMessage)
                                     .foregroundColor(.red)
-                                    .padding()
-                                    .background(Color.clear)
-                                    .cornerRadius(10)
                                     .padding(.horizontal)
                             }
                         }
                         .padding(.vertical)
                     }
                 }
-                
-                // Bottom bar
+
                 BottombarView(navigation: navigation)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { navigation.currentScreen = .worlds }) {
+                    Button(action: {
+                        navigation.currentScreen = .worlds
+                    }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
+                            .foregroundColor(.primary)
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        Task {
+                            await viewModel.loadInitialData(refresh: true)
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
                             .foregroundColor(.primary)
                     }
                 }
@@ -131,13 +145,9 @@ struct MindWorldView: View {
             .onAppear {
                 viewModel.selectedWorld = .mindWorld
                 Task {
-                    await viewModel.loadInitialData()
+                    await viewModel.loadInitialData(refresh: true)
                 }
             }
         }
     }
-}
-
-#Preview {
-    MindWorldView(navigation: NavigationViewModel())
 }

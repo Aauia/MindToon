@@ -233,7 +233,7 @@ struct ComicGeneratorView: View {
 
                             // Loading Indicator during AI generation
                             if viewModel.isLoading {
-                                ProgressView("it may take sometime please wait...")
+                                Text("it may take sometime please wait...")
                                     .padding()
                                     .frame(maxWidth: .infinity)
                             }
