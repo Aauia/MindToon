@@ -3,8 +3,8 @@ import UniformTypeIdentifiers
 
 class APIClient {
     static let shared = APIClient()
-    //private let baseURLString = "https://mindtoon.space" // Change for production
-    private let baseURLString = "http://localhost:8080"
+    private let baseURLString = "https://mindtoon.space" // Change for production
+    //private let baseURLString = "http://localhost:8080"
     private var baseURL: URL { URL(string: baseURLString)! }
     
     // Custom URLSession with increased timeout

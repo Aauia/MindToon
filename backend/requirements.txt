@@ -29,3 +29,4 @@ uuid
 opencv-python-headless
 numpy
 aiohttp
+postmarker 

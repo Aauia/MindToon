@@ -1,40 +1,60 @@
 # email_utils.py
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
 import logging
-
+import requests
 from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
 load_dotenv()
 
 # Logging setup
 logger = logging.getLogger(__name__)
 
-# Load email credentials from environment
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USER = os.getenv("SMTP_USER")  # Your Gmail or other SMTP email
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")  # App password or SMTP password
+# Load Brevo credentials from environment variables
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL")  # Must be verified in Brevo
 
 def send_email(to: str, subject: str, body: str):
-    if not SMTP_USER or not SMTP_PASSWORD:
-        raise RuntimeError("Missing SMTP credentials in environment variables.")
+    """
+    Sends an email using the Brevo SMTP API.
 
-    msg = MIMEMultipart()
-    msg["From"] = SMTP_USER
-    msg["To"] = to
-    msg["Subject"] = subject
-
-    msg.attach(MIMEText(body, "plain"))
+    Args:
+        to (str): The recipient's email address.
+        subject (str): The subject of the email.
+        body (str): The plain text or HTML body of the email.
+    """
+    if not BREVO_API_KEY:
+        raise RuntimeError("Missing BREVO_API_KEY in environment variables. Please set it.")
+    if not BREVO_SENDER_EMAIL:
+        raise RuntimeError("Missing BREVO_SENDER_EMAIL in environment variables. Please set it and ensure it's verified in Brevo.")
 
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.send_message(msg)
-        logger.info(f"📨 Email sent to {to}")
+        # Prepare request
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json"
+        }
+        data = {
+            "sender": {"name": "MindToon", "email": BREVO_SENDER_EMAIL},
+            "to": [{"email": to}],
+            "subject": subject,
+            "htmlContent": f"<html><body>{body}</body></html>",
+            "textContent": body  # optional, fallback for non-HTML readers
+        }
+
+        # Send the email
+        response = requests.post(url, headers=headers, json=data)
+
+        # Log Brevo's response details for debugging
+        logger.info(f"📨 Email sent to {to} via Brevo.")
+        logger.info(f"Brevo Response Status Code: {response.status_code}")
+        if response.status_code not in [200, 201]:
+            logger.warning(f"Brevo returned non-200/201 status code. Body: {response.text}")
+            raise Exception("Email sending failed")
+
     except Exception as e:
-        logger.error(f"❌ Failed to send email to {to}: {e}")
+        logger.error(f"❌ Failed to send email to {to} via Brevo: {e}")
         raise
