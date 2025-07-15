@@ -85,7 +85,7 @@ class ScenarioViewModel: ObservableObject {
                 throw APIError.unauthorized
             }
             
-            let userScenarios = try await apiClient.getUserScenarios(limit: limit, offset: offset, token: token)
+            let userScenarios = try await apiClient.getUserScenarios(limit: limit, offset: offset)
             scenarios = userScenarios
             
             print("✅ Loaded \(userScenarios.count) user scenarios")
@@ -149,7 +149,7 @@ class ScenarioViewModel: ObservableObject {
                 targetAudience: .allAges
             )
             
-            let response = try await apiClient.saveScenario(request: request, token: token)
+            let response = try await apiClient.saveScenario(request: request)
             
             // Refresh scenarios list
             await loadUserScenarios()

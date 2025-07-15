@@ -218,7 +218,7 @@ class CollectionViewModel: ObservableObject {
                 tags: formData.tags
             )
             
-            let newCollection = try await apiClient.createCollection(request: request, token: token)
+            let newCollection = try await apiClient.createCollection(request: request)
             
             // Add to local collections
             collections.insert(newCollection, at: 0)
@@ -325,7 +325,7 @@ class CollectionViewModel: ObservableObject {
             let _ = try await apiClient.addComicToCollection(
                 collectionId: collectionId,
                 comicId: comicId,
-                token: token
+               
             )
             
             if let index = collections.firstIndex(where: { $0.id == collectionId }) {

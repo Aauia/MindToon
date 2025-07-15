@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from api.db import get_session
-from .models import User, UserCreate, UserRead, Token, UserDeletionConfirmation, UserDeletionSummary
+from .models import User, UserCreate, UserRead, Token, UserDeletionConfirmation, UserDeletionSummary,ResetPasswordRequest
 from .utils import (
     authenticate_user,
     create_access_token,
@@ -14,46 +14,113 @@ from .utils import (
 from typing import List
 import logging
 import os
-
+from fastapi.responses import JSONResponse
+from .utils import create_refresh_token 
+from fastapi import Request
+from jose import JWTError
+from typing import List 
+import jwt
+from .utils import SECRET_KEY, ALGORITHM
+import random
+from datetime import timedelta
+from .email_verification import *
+from .email_utils import send_email
+from random import randint
+from pydantic import constr
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 # Set up logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+verification_codes = {} 
+
+class ConfirmRegistrationRequest(BaseModel):
+    email: EmailStr
+    username: str
+    password: str
+    full_name: Optional[str] = None
+    code: str
+
+def generate_verification_code() -> str:
+    return str(random.randint(100000, 999999))
+
+
+@router.post("/start-registration")
+def start_registration(user: UserCreate):
+    code = str(randint(100000, 999999))
+    verification_codes[user.email] = code
+
+    send_email(
+        to=user.email,
+        subject="Your MindToon Verification Code",
+        body=f"Your verification code is: {code}"
+        
+    )
+    return {"msg": "Verification code sent to email"}
+
+@router.post("/confirm-registration", response_model=UserRead)
+def confirm_registration(
+    data: ConfirmRegistrationRequest,
+    session: Session = Depends(get_session)
+):
+    if data.email not in verification_codes or verification_codes[data.email] != data.code:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+    del verification_codes[data.email]
+
+    if session.exec(select(User).where(User.username == data.username)).first():
+        raise HTTPException(status_code=400, detail="Username already registered")
+    if session.exec(select(User).where(User.email == data.email)).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user = User(
+        email=data.email,
+        username=data.username,
+        full_name=data.full_name,
+        hashed_password=get_password_hash(data.password),
+        is_verified=True
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return UserRead.from_orm(user)
+
 @router.post("/register", response_model=UserRead)
 def register_user(user: UserCreate, session: Session = Depends(get_session)):
-    # Check if username already exists
-    existing_user = session.exec(
-        select(User).where(User.username == user.username)
-    ).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
-        )
-    
-    # Check if email already exists
-    existing_email = session.exec(
-        select(User).where(User.email == user.email)
-    ).first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-    
-    # Create new user
-    db_user = User(
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        hashed_password=get_password_hash(user.password)
-    )
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
-    return db_user
+    # Check if username/email already exists
+    if session.exec(select(User).where(User.username == user.username)).first():
+        raise HTTPException(status_code=400, detail="Username already registered")
+    if session.exec(select(User).where(User.email == user.email)).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
 
+    try:
+        # Create user (but don’t commit yet)
+        db_user = User(
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            hashed_password=get_password_hash(user.password),
+            is_verified=False
+        )
+        session.add(db_user)
+
+        # Generate email verification token
+        token = generate_email_verification_token(user.email)
+     
+
+        # ✅ Only commit if email sent successfully
+        session.commit()
+        session.refresh(db_user)
+        return db_user
+
+    except Exception as e:
+        logger.error(f"❌ Registration failed: {e}")
+        session.rollback()  # 🚫 Undo any DB actions
+        raise HTTPException(
+            status_code=500,
+            detail="Registration failed: could not send verification email."
+        )
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -67,21 +134,57 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-   
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please check your inbox and verify your email before logging in."
+        )
+    
 
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
- 
- 
+    refresh_token = create_refresh_token(data={"sub": user.username})
 
-    return {
-        "access_token": access_token,
-       
-        "token_type": "bearer"
-    }
+    response = JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
+    # Set HttpOnly cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,  # Optional: only over HTTPS
+        samesite="lax",  # Or 'strict' if CSRF is a concern
+        max_age=7 * 24 * 60 * 60  # 7 days
+    )
+    return response
 
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(request: Request, session: Session = Depends(get_session)):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    # Optional: verify user still exists
+    user = session.exec(select(User).where(User.username == username)).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    access_token = create_access_token(
+        data={"sub": username},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserRead)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
@@ -475,3 +578,57 @@ async def get_deletion_info(current_user: User = Depends(get_current_active_user
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get deletion information: {str(e)}"
         )  
+
+@router.post("/send-verification")
+def send_verification_email(current_user: User = Depends(get_current_active_user)):
+    if current_user.is_verified:
+        raise HTTPException(status_code=400, detail="Email is already verified")
+
+    from .email_verification import generate_email_verification_token
+    from some_email_utils import send_email
+
+    token = generate_email_verification_token(current_user.email)
+    link = f"https://mindtoon.space/verify-email?token={token}"
+
+    send_email(
+        to=current_user.email,
+        subject="Verify your email address",
+        body=f"Hi {current_user.username}, please verify your email by clicking: {link}"
+    )
+    return {"msg": "Verification email sent"}
+@router.post("/confirm-reset-password")
+def confirm_reset_password(
+    email: EmailStr,
+    code: str,
+    new_password: str,
+    session: Session = Depends(get_session)
+):
+    if email not in verification_codes or verification_codes[email] != code:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.hashed_password = get_password_hash(new_password)
+    session.add(user)
+    session.commit()
+
+    del verification_codes[email]
+    return {"msg": "Password reset successful"}
+
+@router.post("/forgot-password-code")
+def forgot_password_code(email: EmailStr, session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    code = str(randint(100000, 999999))
+    verification_codes[email] = code
+
+    send_email(
+        to=email,
+        subject="MindToon Password Reset Code",
+        body=f"Your code: {code}"
+    )
+    return {"msg": "Code sent"}

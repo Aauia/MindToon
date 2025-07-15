@@ -92,7 +92,7 @@ class WorldManager: ObservableObject {
                 searchTerm: searchTerm
             )
             
-            let comics = try await apiClient.getWorldComics(request: request, token: token)
+            let comics = try await apiClient.getWorldComics(request: request)
             
             // Update UI
             if page == 1 {
@@ -165,7 +165,7 @@ class WorldManager: ObservableObject {
                 throw APIError.unauthorized
             }
             
-            let stats = try await apiClient.getWorldStats(worldType: worldType, token: token)
+            let stats = try await apiClient.getWorldStats(worldType: worldType)
             worldStats[worldType] = stats
             
             // Cache results

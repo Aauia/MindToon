@@ -69,6 +69,14 @@ struct LoginView: View {
                     ProgressView()
                         .padding()
                 }
+                Button("Forgot Password?") {
+                    navigation.currentScreen = .forgotPassword
+                }
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.85))
+                .underline()
+                .padding(.top, 5)
+
 
                 Button("Don't have an account? Register") {
                     navigation.currentScreen = .register
@@ -80,6 +88,10 @@ struct LoginView: View {
             .padding(.bottom, 40)
         }
         .onAppear {
+            username = ""
+            password = ""
+            authManager.clearError()
+            authManager.isLoading = false
             authManager.clearError()
         }
     }

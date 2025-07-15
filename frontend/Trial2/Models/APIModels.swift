@@ -13,6 +13,10 @@ struct RegisterRequest: Codable {
     }
 }
 
+
+// Optional - returned user
+
+
 struct TokenResponse: Codable {
     let accessToken: String
     let tokenType: String
@@ -29,13 +33,48 @@ struct UserResponse: Codable {
     let email: String
     let fullName: String?
     let createdAt: String
-    
+    let isVerified: Bool?
+
     enum CodingKeys: String, CodingKey {
         case id, username, email
         case fullName = "full_name"
         case createdAt = "created_at"
+        case isVerified = "is_verified"
     }
 }
+struct ConfirmRegistrationRequest: Codable {
+    let email: String
+    let username: String
+    let password: String
+    let fullName: String?
+    let code: String
+
+    enum CodingKeys: String, CodingKey {
+        case email, username, password, code
+        case fullName = "full_name"
+    }
+}
+struct StartRegistrationRequest: Codable {
+    let username: String
+    let email: String
+    let fullName: String?
+    let password: String
+
+    enum CodingKeys: String, CodingKey {
+        case username, email, password
+        case fullName = "full_name"
+    }
+}
+struct ForgotPasswordRequest: Codable {
+    let email: String
+}
+
+struct ConfirmResetPasswordRequest: Codable {
+    let email: String
+    let code: String
+    let newPassword: String
+}
+
 
 // MARK: - Account Deletion Models
 struct AccountDeletionRequest: Codable {
@@ -67,6 +106,7 @@ struct DeletionSummary: Codable {
         case deletedAt = "deleted_at"
     }
 }
+
 
 // MARK: - Comics Models (Updated)
 struct ComicRequest: Codable {

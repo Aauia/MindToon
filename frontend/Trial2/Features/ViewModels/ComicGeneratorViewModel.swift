@@ -149,7 +149,7 @@ class ComicGeneratorViewModel: ObservableObject {
                 throw APIError.unauthorized
             }
             
-            let comic = try await apiClient.generateComicWithData(request: saveRequest, token: token)
+            let comic = try await apiClient.generateComicWithData(request: saveRequest)
             
             generatedComic = comic
             didGenerateComicSubject.send(comic)
@@ -159,7 +159,7 @@ class ComicGeneratorViewModel: ObservableObject {
             if comic.hasDetailedScenario {
                 print("🔎 Fetching detailed scenario for comic ID: \(comic.id)")
                 do {
-                    let premise = try await apiClient.getScenarioByComic(comicId: comic.id, token: token)
+                    let premise = try await apiClient.getScenarioByComic(comicId: comic.id)
                     print("✅ Detailed scenario fetched, storing in generatedScenario")
                     generatedScenario = premise
                 } catch {
@@ -175,7 +175,7 @@ class ComicGeneratorViewModel: ObservableObject {
         } catch APIError.unauthorized {
             errorMessage = "Please log in to generate comics"
         } catch APIError.serverError(let code) {
-            errorMessage = "Failed to generate comic: Server error \(code)"
+            errorMessage = "Your session is expired , please log in again"
         } catch APIError.serverErrorMessage(let message) {
             if message.contains("504 Gateway Time-out") {
                 isLongLoading = true

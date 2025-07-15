@@ -196,6 +196,10 @@ struct APISuccessResponse: Codable {
 // MARK: - Error Handler Utility
 struct ErrorHandler {
     static func parseServerError(data: Data, statusCode: Int) -> APIError {
+        if statusCode == 401 {
+        return .unauthorized
+        }
+
         // Try to decode as ValidationErrorResponse first
         if let validationResponse = try? JSONDecoder().decode(ValidationErrorResponse.self, from: data) {
             let errorMessages = validationResponse.validationErrors.map { "\($0.field): \($0.message)" }
@@ -210,8 +214,12 @@ struct ErrorHandler {
         // Try to extract error message from raw data
         if let jsonData = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
             if let detail = jsonData["detail"] as? String {
-                return .serverErrorMessage(detail)
+                if detail.lowercased().contains("could not validate credentials") {
+                    return .unauthorized 
+                }
+            return .serverErrorMessage(detail)
             }
+            
             if let message = jsonData["message"] as? String {
                 return .serverErrorMessage(message)
             }

@@ -8,7 +8,7 @@ struct RootView: View {
         Group {
             if authManager.isAuthenticated { // Simplified condition
                 // User is authenticated, show main app
-                switch navigation.currentScreen {
+            switch navigation.currentScreen {
                 case .welcome:
                     WelcomeView(viewModel: WelcomeViewModel(), navigation: navigation)
                 case .mainDashboard:
@@ -58,6 +58,11 @@ struct RootView: View {
                 case .login, .register:
                     // If authenticated, redirect to main dashboard
                     MainDashboardView(navigation: navigation)
+                case .forgotPassword:
+                    WelcomeView(viewModel: WelcomeViewModel(), navigation: navigation)
+
+                              
+              
                 }
             } else {
                 // User is not authenticated, show auth screens
@@ -68,6 +73,8 @@ struct RootView: View {
                     LoginView(navigation: navigation, authManager: authManager)
                 case .register:
                     RegistrationView(navigation: navigation, authManager: authManager)
+                case .forgotPassword:
+                    ForgotPasswordView(authManager: authManager, navigation: navigation)
                 default:
                     // Default to welcome screen if not authenticated or explicitly handled
                     WelcomeView(viewModel: WelcomeViewModel(), navigation: navigation)

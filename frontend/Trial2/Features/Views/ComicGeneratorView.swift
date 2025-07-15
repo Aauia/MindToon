@@ -9,6 +9,7 @@ struct ComicGeneratorView: View {
     // Add world selection state
     @State private var selectedWorld: WorldType = .imaginationWorld
     @State private var showingWorldPicker = false
+    @State private var showLeavingInfo = true 
     
     // Genre and Art Style options
     private let genres = ["adventure", "comedy", "horror", "romance", "sci-fi", "fantasy", "mystery", "drama", "action", "slice of life"]
@@ -233,9 +234,42 @@ struct ComicGeneratorView: View {
 
                             // Loading Indicator during AI generation
                             if viewModel.isLoading {
-                                Text("it may take sometime please wait...")
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
+                                VStack(spacing: 16) {
+                                    Text("Generation may take some time, please wait...")
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+
+                                    if showLeavingInfo {
+                                        HStack(alignment: .top, spacing: 12) {
+                                            Image(systemName: "info.circle")
+                                                .foregroundColor(.blue)
+
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("You can close the app or leave the screen.")
+                                                    .font(.headline)
+
+                                                Text("Your comic will be waiting for you in the world you selected.")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.secondary)
+                                            }
+
+                                            Spacer()
+
+                                            Button(action: {
+                                                withAnimation {
+                                                    showLeavingInfo = false
+                                                }
+                                            }) {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                        .padding()
+                                        .background(Color(.systemGray6))
+                                        .cornerRadius(12)
+                                        .padding(.horizontal)
+                                    }
+                                }
                             }
 
                             // Long Loading UI for 504 Gateway Timeout

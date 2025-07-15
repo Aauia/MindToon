@@ -2,9 +2,15 @@ from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from pydantic import EmailStr
-
+from pydantic import constr
 if TYPE_CHECKING:
     from api.chat.models import ComicsPage
+
+
+from sqlmodel import SQLModel, Field
+from datetime import datetime
+
+from random import randint
 
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True)
@@ -18,6 +24,7 @@ class User(UserBase, table=True):
     hashed_password: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    is_verified: bool = Field(default=False)  # ✅ New field
     
     # Relationships
     comics: List["ComicsPage"] = Relationship(back_populates="user")
@@ -52,3 +59,8 @@ class Token(SQLModel):
 
 class TokenData(SQLModel):
     username: Optional[str] = None 
+
+
+class ResetPasswordRequest(SQLModel):
+    token: str
+    new_password: constr(min_length=8)

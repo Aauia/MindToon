@@ -21,10 +21,12 @@ class NavigationViewModel: ObservableObject {
         case scenarios
         case detailedScenario
         case accountDeletion
+        case forgotPassword
     }
     @Published var currentScreen: Screen = .welcome
     @Published var generatedComic: ComicGenerationResponse?
     @Published var selectedScenario: DetailedScenario?
+    @Published var showGenerationWarning = false
     
     func navigateTo(_ screen: Screen) {
         currentScreen = screen

@@ -269,7 +269,7 @@ class WorldViewModel: ObservableObject {
                 isPublic: nil
             )
             
-            _ = try await APIClient.shared.updateComic(id: comic.id, updates: updateRequest, token: token)
+            _ = try await APIClient.shared.updateComic(id: comic.id, updates: updateRequest)
             
             // Update local data
             let updatedComic = ComicGenerationResponse(
@@ -307,7 +307,7 @@ class WorldViewModel: ObservableObject {
                 isPublic: !comic.isPublic
             )
             
-            _ = try await APIClient.shared.updateComic(id: comic.id, updates: updateRequest, token: token)
+            _ = try await APIClient.shared.updateComic(id: comic.id, updates: updateRequest)
             
             // Update local data
             let updatedComic = ComicGenerationResponse(
@@ -339,7 +339,7 @@ class WorldViewModel: ObservableObject {
                 throw APIError.unauthorized
             }
             
-            _ = try await APIClient.shared.deleteComic(id: comic.id, token: token)
+            _ = try await APIClient.shared.deleteComic(id: comic.id)
             
             // Remove from local data
             removeComic(comicId: comic.id)

@@ -54,6 +54,7 @@
 		68D161A72E0E5A8F00BAEEF5 /* BackendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D161A62E0E5A8F00BAEEF5 /* BackendView.swift */; };
 		68DDA1D42E0DC1A4004B2CCC /* NavigationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DDA1D32E0DC1A4004B2CCC /* NavigationViewModel.swift */; };
 		68E0158C2E1C6D0900B87E6D /* FlyingGhost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E0158B2E1C6D0900B87E6D /* FlyingGhost.swift */; };
+		68ED4F8C2E26B0B600065358 /* ForgotPassword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68ED4F8B2E26B09B00065358 /* ForgotPassword.swift */; };
 		68F06FF72E1C61EE00F030B1 /* PixelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F06FF62E1C61EE00F030B1 /* PixelsView.swift */; };
 /* End PBXBuildFile section */
 
@@ -108,6 +109,7 @@
 		68D161A62E0E5A8F00BAEEF5 /* BackendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendView.swift; sourceTree = "<group>"; };
 		68DDA1D32E0DC1A4004B2CCC /* NavigationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationViewModel.swift; sourceTree = "<group>"; };
 		68E0158B2E1C6D0900B87E6D /* FlyingGhost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlyingGhost.swift; sourceTree = "<group>"; };
+		68ED4F8B2E26B09B00065358 /* ForgotPassword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPassword.swift; sourceTree = "<group>"; };
 		68F06FF62E1C61EE00F030B1 /* PixelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -229,6 +231,7 @@
 		682AC09F2E09274600171857 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				68ED4F8B2E26B09B00065358 /* ForgotPassword.swift */,
 				682AC0A22E09277F00171857 /* WelcomeView.swift */,
 				682AC0A92E09285D00171857 /* MainDashboardView.swift */,
 				682AC0AB2E092EAE00171857 /* CharacterView.swift */,
@@ -362,6 +365,7 @@
 				68E0158C2E1C6D0900B87E6D /* FlyingGhost.swift in Sources */,
 				68CC378A2E15F4C300BC00D1 /* WorldManager.swift in Sources */,
 				68860BB22E1DA1A9003F50BF /* TestScenarioView.swift in Sources */,
+				68ED4F8C2E26B0B600065358 /* ForgotPassword.swift in Sources */,
 				68CC37882E15F4A000BC00D1 /* TestingService.swift in Sources */,
 				68CC37822E15F3DC00BC00D1 /* ScenarioModels.swift in Sources */,
 				682AC09C2E0924E500171857 /* LoadingViewable.swift in Sources */,
