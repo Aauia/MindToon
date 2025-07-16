@@ -245,10 +245,10 @@ struct ComicGeneratorView: View {
                                                 .foregroundColor(.blue)
 
                                             VStack(alignment: .leading, spacing: 4) {
-                                                Text("You can close the app or leave the screen.")
+                                                Text("If you close the app or leave the screen.")
                                                     .font(.headline)
 
-                                                Text("Your comic will be waiting for you in the world you selected.")
+                                                Text("Just wait a while, your comics will be generated and saved")
                                                     .font(.subheadline)
                                                     .foregroundColor(.secondary)
                                             }

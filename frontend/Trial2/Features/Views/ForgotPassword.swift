@@ -13,60 +13,32 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         ZStack {
-            Color.purple.opacity(0.15).ignoresSafeArea()
+            Color(red: 0.75, green: 0.67, blue: 0.95).ignoresSafeArea()
+            PixelSkyView() // Same animated background
 
             VStack(spacing: 24) {
+                Spacer(minLength: 20)
+
                 Text(step == 1 ? "Forgot Password" : "Reset Password")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white)
+                    .shadow(color: Color.purple.opacity(0.2), radius: 2, x: 0, y: 2)
 
-                if step == 1 {
-                    Group {
-                        TextField("Enter your email", text: $email)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .autocapitalization(.none)
+                Group {
+                    if step == 1 {
+                        CustomInputField(placeholder: "Enter your email", text: $email)
+                    } else {
+                        CustomInputField(placeholder: "Enter code", text: $code, keyboard: .numberPad)
+                        CustomSecureField(placeholder: "New password", text: $newPassword)
+                        CustomSecureField(placeholder: "Confirm new password", text: $confirmPassword)
                     }
-                    .transition(.move(edge: .leading).combined(with: .opacity))
-                } else {
-                    Group {
-                        TextField("Enter code", text: $code)
-                            .keyboardType(.numberPad)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(10)
-
-                        SecureField("New password", text: $newPassword)
-                            .textContentType(.newPassword) // explicitly say it's a new password
-                            .keyboardType(.asciiCapable)
-                            .autocorrectionDisabled(true)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(10)
-
-                        SecureField("Confirm new password", text: $confirmPassword)
-                            .textContentType(.newPassword)
-                            .keyboardType(.asciiCapable)
-                            .autocorrectionDisabled(true)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(10)
-
-                    }
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
 
                 if let errorMessage = authManager.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .multilineTextAlignment(.center)
-                        .padding()
+                        .padding(.horizontal)
                 }
 
                 Button(action: {
@@ -83,41 +55,51 @@ struct ForgotPasswordView: View {
                                 authManager.errorMessage = "Passwords do not match"
                                 return
                             }
-                            let success = await authManager.resetPassword(email: email, code: code, newPassword: newPassword)
+                            let success = await authManager.resetPassword(
+                                email: email,
+                                code: code,
+                                newPassword: newPassword
+                            )
                             if success {
-                                 DispatchQueue.main.async {
-                                    // Clear fields explicitly on navigation
+                                DispatchQueue.main.async {
                                     authManager.clearError()
                                     navigation.currentScreen = .login
-                                    
-                                 
-                                 }
+                                }
                             }
                         }
                     }
                 }) {
                     Text(step == 1 ? "Send Code" : "Reset Password")
+                        .font(.headline)
                         .foregroundColor(.white)
-                        .padding()
+                        .padding(.vertical, 14)
                         .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .cornerRadius(12)
+                        .background(Color(red: 0.7, green: 0.4, blue: 0.9))
+                        .cornerRadius(18)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+                        )
                 }
                 .disabled(authManager.isLoading)
+                .padding(.horizontal, 40)
+
+                Button(action: {
+                    navigation.currentScreen = .login
+                }) {
+                    Text("Back to Login")
+                        .foregroundColor(.white)
+                        .underline()
+                }
+                .padding(.top, 10)
 
                 Spacer()
             }
-            Button("Back to login") {
-                navigation.currentScreen = .login
+            .padding(.horizontal, 30)
+            .padding(.top, 40)
+            .onAppear {
+                authManager.clearError()
             }
-            .padding()
-            .animation(.easeInOut, value: step)
         }
-        .onAppear {
-            authManager.clearError()
-        }
-     
-        .foregroundColor(.black)
-        .padding(.top, 10)
     }
 }

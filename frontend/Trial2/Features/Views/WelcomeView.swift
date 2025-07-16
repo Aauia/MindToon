@@ -59,3 +59,32 @@ struct WelcomeView_Previews: PreviewProvider {
         }
     }
 }
+struct CustomInputField: View {
+    var placeholder: String
+    @Binding var text: String
+    var keyboard: UIKeyboardType = .default
+
+    var body: some View {
+        TextField(placeholder, text: $text)
+            .keyboardType(keyboard)
+            .autocapitalization(.none)
+            .padding()
+            .background(Color.white.opacity(0.9))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+}
+
+struct CustomSecureField: View {
+    var placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        SecureField(placeholder, text: $text)
+            .autocapitalization(.none)
+            .padding()
+            .background(Color.white.opacity(0.9))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+}
