@@ -2,21 +2,27 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import List, Tuple, Dict, Optional, Literal
 import math
 from dataclasses import dataclass
-from .image_utils import get_system_font, wrap_text_pil, draw_text_with_outline
+from .font_utils import get_system_font, wrap_text_pil, draw_text_with_outline
+
+"""
+comic_text_utils.py
+
+This module now supports a single wide, bottom-anchored speech bubble per panel.
+All dialogue lines are combined into one bubble, placed at the bottom center.
+"""
 
 @dataclass
 class ComicTextStyle:
     """Defines styling for comic text elements"""
-    font_size: int = 36  # Readable text size
-    font_family: str = "arial_bold"
+    font_size: int = 16  # Smaller text size (was 36)
     text_color: str = "black"  # Clean black text
-    outline_color: str = "white"
+    outline_color: str = "black"  # Changed from white to black
     outline_width: int = 3  # Thicker outline by default
     bubble_color: str = "white"  # Clean white bubbles
     bubble_outline: str = "black"  # Clean black outline
-    bubble_outline_width: int = 4  # Thicker bubble outline
+    bubble_outline_width: int = 0  # No border (was 4)
     padding: int = 25  # Much more generous padding for better readability
-    corner_radius: int = 15  # Nice rounded corners
+    corner_radius: int = 0  # No rounded corners (was 15)
     line_spacing: int = 12  # Extra space between lines
 
 @dataclass 
@@ -36,40 +42,39 @@ class ComicTextRenderer:
     def __init__(self):
         self.default_styles = {
             "speech": ComicTextStyle(
-                font_size=36,  # Readable speech text
-                font_family="arial_bold",
+                font_size=14,  # Readable speech text
                 bubble_color="white",
                 bubble_outline="black",
-                corner_radius=15,
+                corner_radius=0,  # No rounded corners
                 padding=25,  # Generous padding
                 outline_width=3,
-                line_spacing=12
+                line_spacing=12,
+                outline_color="black"  # Black outline
             ),
             "thought": ComicTextStyle(
-                font_size=32,  # Slightly smaller thought text
-                font_family="arial",
+                font_size=20,  # Slightly smaller thought text
                 bubble_color="white",
                 bubble_outline="black",
-                corner_radius=25,  # More rounded for thoughts
+                corner_radius=0,  # No rounded corners
                 padding=25,  # Generous padding
                 outline_width=2,
-                line_spacing=12
+                line_spacing=12,
+                outline_color="black"  # Black outline
             ),
             "narration": ComicTextStyle(
-                font_size=30,  # Clean narration text
-                font_family="times",  # More elegant font for narration
+                font_size=20,  # Clean narration text
                 bubble_color="#f8f8f8",  # Slightly off-white for narration
                 bubble_outline="black",
-                corner_radius=5,  # Sharp corners for narration boxes
+                corner_radius=0,  # No rounded corners
                 padding=25,  # Generous padding
                 outline_width=2,
-                line_spacing=12
+                line_spacing=12,
+                outline_color="black"  # Black outline
             ),
             "sound_effect": ComicTextStyle(
-                font_size=52,  # Bigger and bolder for sound effects
-                font_family="arial_black",
+                font_size=40,  # Bigger and bolder for sound effects
                 text_color="black",
-                outline_color="white",
+                outline_color="black",  # Black outline
                 outline_width=6,  # Thicker outline for impact
                 bubble_color="transparent",  # No bubble for SFX
                 bubble_outline="transparent",
@@ -77,14 +82,13 @@ class ComicTextRenderer:
                 line_spacing=8
             ),
             "scream": ComicTextStyle(
-                font_size=44,  # Bigger scream text
-                font_family="arial_black", 
+                font_size=30,  # Bigger scream text
                 text_color="black",
-                outline_color="white",
+                outline_color="black",  # Black outline
                 outline_width=4,  # Thicker outline for emphasis
                 bubble_color="white",
                 bubble_outline="black",
-                corner_radius=8,  # Jagged-ish corners for screaming
+                corner_radius=0,  # No rounded corners
                 padding=25,  # Generous padding
                 line_spacing=10
             )
@@ -156,7 +160,7 @@ class ComicTextRenderer:
         
         for test_size in range(max_font_size, min_font_size - 1, -2):
             try:
-                test_font = get_system_font(style.font_family, test_size)
+                test_font = get_system_font("default", test_size)
                 temp_img = Image.new('RGB', (1, 1))
                 draw = ImageDraw.Draw(temp_img)
                 
@@ -181,50 +185,36 @@ class ComicTextRenderer:
         return best_size
 
     def calculate_bubble_size(self, text: str, style: ComicTextStyle, max_width: int) -> Tuple[int, int]:
-        """Calculate the required bubble size for given text - favor narrower, taller bubbles"""
+        """Calculate the required bubble size for given text - favor wide, compact bubbles"""
         try:
-            font = get_system_font(style.font_family, style.font_size)
-            
+            font = get_system_font("default", style.font_size)
             # Create temporary draw object to measure text
             temp_img = Image.new('RGB', (1, 1))
             draw = ImageDraw.Draw(temp_img)
-            
-            # Use a narrower max width to force more text wrapping (taller bubbles)
-            constrained_width = int(max_width * 0.6)  # Use only 60% of available width
-            
+            # Use the full max_width for wrapping
+            constrained_width = max_width
             # Wrap text and calculate dimensions
             wrapped_lines = wrap_text_pil(draw, text, font, constrained_width - 2 * style.padding)
-            
             if not wrapped_lines:
                 return style.padding * 2, style.padding * 2
-            
             # Calculate text dimensions
             line_height = draw.textbbox((0, 0), "Ay", font=font)[3] - draw.textbbox((0, 0), "Ay", font=font)[1]
             text_height = len(wrapped_lines) * line_height + (len(wrapped_lines) - 1) * 8
-            
             max_line_width = 0
             for line in wrapped_lines:
                 line_bbox = draw.textbbox((0, 0), line, font=font)
                 line_width = line_bbox[2] - line_bbox[0]
                 max_line_width = max(max_line_width, line_width)
-            
-            # Add padding and set adaptive minimum sizes - favor narrower, taller dimensions
-            min_bubble_width = max(120, constrained_width * 0.4)  # Narrower minimum
-            min_bubble_height = max(80, style.font_size + 40)     # Taller minimum
-            
-            bubble_width = max(max_line_width + 2 * style.padding, min_bubble_width)
-            bubble_height = max(text_height + 2 * style.padding, min_bubble_height)
-            
-            # Ensure bubble doesn't exceed reasonable limits - keep it narrow
-            bubble_width = min(bubble_width, constrained_width * 0.8)  # Max 80% of constrained width
-            
+            # Always use the full width available, don't constrain to minimum
+            bubble_width = max_width
+            # Calculate height based on actual text needs
+            bubble_height = text_height + 2 * style.padding
+            # Ensure minimum height for readability
+            bubble_height = max(bubble_height, style.font_size + 2 * style.padding)
             return bubble_width, bubble_height
-            
         except Exception as e:
             print(f"Error calculating bubble size: {e}")
-            # Adaptive fallback size - narrower and taller
-            fallback_width = max(120, max_width * 0.25)
-            return fallback_width, 120
+            return max_width, 120
     
     def draw_bubble_shape(self, draw: ImageDraw.Draw, coords: Tuple[int, int, int, int], 
                          bubble_type: str, style: ComicTextStyle, speaker_pos: str = "center"):
@@ -240,14 +230,14 @@ class ComicTextRenderer:
         elif bubble_type == "scream":
             # Draw jagged bubble for screaming
             self._draw_jagged_bubble(draw, coords, style)
-            self._draw_speech_tail(draw, coords, speaker_pos, style)
+            # Removed speech tail
         elif bubble_type == "narration":
             # Draw rectangular narration box
             self._draw_narration_box(draw, coords, style)
         else:
-            # Regular speech bubble with tail
+            # Regular speech bubble without tail
             self._draw_speech_bubble(draw, coords, style, speaker_pos)
-            self._draw_speech_tail(draw, coords, speaker_pos, style)
+            # Removed speech tail
     
     def _draw_speech_bubble(self, draw: ImageDraw.Draw, coords: Tuple[int, int, int, int], 
                            style: ComicTextStyle, speaker_pos: str):
@@ -264,8 +254,7 @@ class ComicTextRenderer:
                 width=style.bubble_outline_width
             )
             
-            # Add tail pointing to speaker
-            self._draw_speech_tail(draw, coords, speaker_pos, style)
+            # Removed speech tail
     
     def _draw_cloud_bubble(self, draw: ImageDraw.Draw, coords: Tuple[int, int, int, int], 
                           style: ComicTextStyle):
@@ -434,13 +423,12 @@ class ComicTextRenderer:
         # Apply emotion modifications
         style = self.get_style_for_emotion(bubble.style, bubble.emotion)
         
-        # Calculate bubble size for normal text
-        max_bubble_width = min(int(panel_width * 0.7), 500)  # Good max width for readable text
-        bubble_width, bubble_height = self.calculate_bubble_size(bubble.text, style, max_bubble_width)
+        # Always use the bubble size that was already calculated and set by the caller
+        bubble_width, bubble_height = bubble._calculated_size
         
-        # USE EXACTLY the forced coordinates (minimal bounds checking)
-        x = max(5, min(forced_x, panel_width - bubble_width - 5))
-        y = max(5, min(forced_y, panel_height - bubble_height - 5))
+        # USE EXACTLY the forced coordinates (no bounds checking)
+        x = forced_x
+        y = forced_y
         
         print(f"📐 Bubble size: {bubble_width}x{bubble_height} at final position ({x}, {y})")
         
@@ -466,39 +454,67 @@ class ComicTextRenderer:
     
     def _render_text_in_bubble(self, draw: ImageDraw.Draw, text: str, 
                               coords: Tuple[int, int, int, int], style: ComicTextStyle):
-        """Render wrapped text inside bubble with optimal font sizing"""
+        """Render wrapped text inside bubble with bounds checking to prevent overflow"""
         x1, y1, x2, y2 = coords
-        
         try:
-            # Calculate optimal font size for this bubble
             bubble_width = x2 - x1
             bubble_height = y2 - y1
-            optimal_font_size = self.calculate_optimal_font_size(text, style, bubble_width, bubble_height)
+            print(f"🔍 DEBUG: Rendering text in bubble {bubble_width}x{bubble_height}")
+            print(f"🔍 DEBUG: Text to render: '{text[:50]}...'")
             
-            # Use optimal font size
-            font = get_system_font(style.font_family, optimal_font_size)
+            # Use the style's font size directly
+            font = get_system_font("default", style.font_size)
+            print(f"🔍 DEBUG: Using font size: {style.font_size}")
             
-            # Wrap text with optimal font
-            max_width = (x2 - x1) - 2 * style.padding
-            wrapped_lines = wrap_text_pil(draw, text, font, max_width)
+            # Calculate available text area with padding
+            max_text_width = bubble_width - 2 * style.padding
+            max_text_height = bubble_height - 2 * style.padding
+            print(f"🔍 DEBUG: Available text area: {max_text_width}x{max_text_height}")
             
-            if not wrapped_lines:
+            # Wrap text to fit the available width
+            all_lines = []
+            for raw_line in text.splitlines():
+                wrapped = wrap_text_pil(draw, raw_line, font, max_text_width)
+                if wrapped:
+                    all_lines.extend(wrapped)
+            
+            print(f"🔍 DEBUG: Total lines to render: {len(all_lines)}")
+            if not all_lines:
+                print("❌ No lines to render!")
                 return
             
-            # Calculate line height and starting position with proper spacing
+            # Calculate line height and spacing
             line_height = draw.textbbox((0, 0), "Ay", font=font)[3] - draw.textbbox((0, 0), "Ay", font=font)[1]
-            line_spacing = getattr(style, 'line_spacing', 12)  # Use style's line spacing or default
-            total_text_height = len(wrapped_lines) * line_height + (len(wrapped_lines) - 1) * line_spacing
+            line_spacing = getattr(style, 'line_spacing', 12)
+            total_text_height = len(all_lines) * line_height + (len(all_lines) - 1) * line_spacing
             
-            start_y = y1 + style.padding + (y2 - y1 - 2 * style.padding - total_text_height) // 2
+            # Check if text fits in available height
+            if total_text_height > max_text_height:
+                # Truncate lines to fit (NOTE: This will cut off text if it doesn't fit. Consider reducing font size further for future improvements.)
+                available_lines = max(1, (max_text_height - line_spacing) // (line_height + line_spacing))
+                all_lines = all_lines[:available_lines]
+                total_text_height = len(all_lines) * line_height + (len(all_lines) - 1) * line_spacing
+                print(f"🔍 DEBUG: Truncated to {len(all_lines)} lines")
             
-            # Draw each line centered with proper spacing
-            for i, line in enumerate(wrapped_lines):
+            # Center text vertically in available space
+            start_y = y1 + style.padding + (max_text_height - total_text_height) // 2
+            start_y = max(y1 + style.padding, start_y)  # Don't start below top padding
+            
+            print(f"🔍 DEBUG: Line height: {line_height}, Total text height: {total_text_height}")
+            print(f"🔍 DEBUG: Start Y: {start_y}")
+            
+            # Draw each line centered horizontally
+            for i, line in enumerate(all_lines):
                 line_bbox = draw.textbbox((0, 0), line, font=font)
                 line_width = line_bbox[2] - line_bbox[0]
-                
-                line_x = x1 + style.padding + (max_width - line_width) // 2
+                line_x = x1 + style.padding + (max_text_width - line_width) // 2
                 line_y = start_y + i * (line_height + line_spacing)
+                
+                # Ensure line doesn't go outside bubble bounds
+                line_x = max(x1 + style.padding, min(line_x, x2 - style.padding - line_width))
+                line_y = max(y1 + style.padding, min(line_y, y2 - style.padding - line_height))
+                
+                print(f"🔍 DEBUG: Drawing line {i}: '{line}' at ({line_x}, {line_y})")
                 
                 # Draw text with outline
                 draw_text_with_outline(
@@ -510,11 +526,13 @@ class ComicTextRenderer:
                     style.outline_color, 
                     style.outline_width
                 )
-                
-            print(f"✅ Rendered text with adaptive font size {optimal_font_size}px in {bubble_width}x{bubble_height} bubble")
-        
+            
+            print(f"✅ Successfully rendered {len(all_lines)} lines in {bubble_width}x{bubble_height} bubble")
+            
         except Exception as e:
-            print(f"❌ Error rendering adaptive text in bubble: {e}")
+            print(f"❌ Error rendering text in bubble: {e}")
+            import traceback
+            traceback.print_exc()
     
     def _find_optimal_position(self, panel: Image.Image, bubble: TextBubble, 
                               panel_width: int, panel_height: int, style: ComicTextStyle) -> Tuple[int, int]:

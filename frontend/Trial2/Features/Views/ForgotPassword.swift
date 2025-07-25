@@ -26,11 +26,29 @@ struct ForgotPasswordView: View {
 
                 Group {
                     if step == 1 {
-                        CustomInputField(placeholder: "Enter your email", text: $email)
+                        VStack(spacing: 16) {
+                            CustomInputField(placeholder: "Enter your email", text: $email)
+                                .foregroundColor(.black)
+                                .background(Color.white.opacity(0.22))
+                                .cornerRadius(14)
+                        }
+                        .colorScheme(.light)
                     } else {
-                        CustomInputField(placeholder: "Enter code", text: $code, keyboard: .numberPad)
-                        CustomSecureField(placeholder: "New password", text: $newPassword)
-                        CustomSecureField(placeholder: "Confirm new password", text: $confirmPassword)
+                        VStack(spacing: 16) {
+                            CustomInputField(placeholder: "Enter code", text: $code, keyboard: .numberPad)
+                                .foregroundColor(.black)
+                                .background(Color.white.opacity(0.22))
+                                .cornerRadius(14)
+                            CustomSecureField(placeholder: "New password", text: $newPassword)
+                                .foregroundColor(.black)
+                                .background(Color.white.opacity(0.22))
+                                .cornerRadius(14)
+                            CustomSecureField(placeholder: "Confirm new password", text: $confirmPassword)
+                                .foregroundColor(.black)
+                                .background(Color.white.opacity(0.22))
+                                .cornerRadius(14)
+                        }
+                        .colorScheme(.light)
                     }
                 }
 

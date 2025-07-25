@@ -107,6 +107,8 @@ struct ComicViewerView: View {
                         .foregroundColor(Color(hex: "#5A3FA0"))
                     Spacer()
                 }
+                .padding(.horizontal, 30)
+                .padding(.top, 16) 
                 HStack {
                     Circle()
                         .fill(worldColor(for: comic.worldType))
@@ -121,15 +123,20 @@ struct ComicViewerView: View {
                         .foregroundColor(Color(hex: "#5A3FA0").opacity(0.7))
                     Spacer()
                 }
+                .padding(.horizontal, 30)
             }
 
-            HStack(spacing: 32) {
+            // HStack(spacing: 32) {
+
+            HStack {
+                Spacer()
                 Button(action: { shareComic(comic) }) {
                     Image(systemName: "paperplane")
                         .font(.title2)
                         .foregroundColor(.black)
                 }
             }
+            .padding(.horizontal, 30)
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("Story")
@@ -151,7 +158,7 @@ struct ComicViewerView: View {
                     .frame(minHeight: 120, maxHeight: 200)
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 25)
         }
         .padding(.bottom, 8)
         .background(Color.white.opacity(0.95))

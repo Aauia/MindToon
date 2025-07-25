@@ -2,6 +2,11 @@
 from PIL import Image
 from typing import List, Tuple, Dict, Optional
 
+# DEPRECATED: All panels now use a single wide speech bubble at the bottom center.
+# This module is no longer used for bubble positioning.
+
+# (File retained for reference or future use.)
+
 class SimpleTextPositioner:
     """
     Lightweight text positioning system that prevents bubble overlaps

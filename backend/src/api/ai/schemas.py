@@ -66,6 +66,7 @@ class ScenarioSchema2(BaseModel):
     frames: List[FrameDescription]
     story_arc: str = "complete"  # Whether it's a complete story or part of series
     target_audience: Literal["all_ages", "teen", "adult"] = "all_ages"
+   
 
 class ComicGenerationRequest(BaseModel):
     concept: str

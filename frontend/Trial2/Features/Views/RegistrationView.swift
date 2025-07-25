@@ -76,26 +76,55 @@ struct RegistrationView: View {
     // MARK: - Views
 
     private var registrationFields: some View {
-        Group {
+        VStack(spacing: 16) {
             TextField("Username", text: $username)
+                .padding()
+                .background(Color.white.opacity(0.22))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
+                .foregroundColor(.black)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
             TextField("Email", text: $email)
+                .padding()
+                .background(Color.white.opacity(0.22))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
+                .foregroundColor(.black)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
             TextField("Full Name", text: $fullName)
+                .padding()
+                .background(Color.white.opacity(0.22))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
+                .foregroundColor(.black)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
             SecureField("Password", text: $password)
+                .padding()
+                .background(Color.white.opacity(0.22))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
+                .foregroundColor(.black)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
             SecureField("Confirm Password", text: $confirmPassword)
+                .padding()
+                .background(Color.white.opacity(0.22))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
+                .foregroundColor(.black)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
         }
-        .padding()
-        .background(Color.white.opacity(0.22))
-        .cornerRadius(14)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
-        .foregroundColor(.primary)
-        .autocapitalization(.none)
-        .disableAutocorrection(true)
+        .colorScheme(.light)
     }
 
     private var confirmationFields: some View {
-        Group {
+        VStack(spacing: 16) {
             Text("Enter the verification code sent to your email.")
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
             TextField("Verification Code", text: $verificationCode)
                 .keyboardType(.numberPad)
@@ -103,9 +132,10 @@ struct RegistrationView: View {
                 .background(Color.white.opacity(0.22))
                 .cornerRadius(14)
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.4), lineWidth: 1))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
                 .autocapitalization(.none)
         }
+        .colorScheme(.light)
     }
 
     private var actionButton: some View {

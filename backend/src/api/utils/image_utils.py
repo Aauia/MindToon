@@ -9,138 +9,8 @@ import random
 import textwrap # Import textwrap for better text wrapping
 import sys
 import glob
-# Define fonts - Mac-compatible system fonts with comic font priorities
-def get_system_font(font_name: str, size: int, fallback_font_name: str = "arial", fallback_size: int = 20):
-    """
-    Enhanced font loading with prioritized uploaded fonts and robust fallbacks.
-    
-    IMPORTANT NOTE:
-    The 'uploaded_fonts' mapping currently points all font_name keys to 'Merriweather-Light.otf'.
-    For a more diverse comic book look, you should upload and map different .otf/.ttf
-    files for 'comic_speech', 'impact', 'thought', 'narration', 'comic_bold', etc.
-    For example:
-    uploaded_fonts = {
-        "arial": ["Merriweather-Light.otf"],
-        "comic_speech": ["ComicSansMS.ttf"], # Or a custom comic font you upload
-        "comic_bold": ["Bangers-Regular.ttf"], # Example for a bold, impactful font
-        "impact": ["Impact.ttf"],
-        # ... and so on for other font types
-    }
-    """
-    # FIRST PRIORITY: Check for uploaded fonts in our fonts directory
-    fonts_dir = os.path.join(os.path.dirname(__file__), "fonts")
-    uploaded_fonts = {
-        "arial": ["Merriweather-Light.otf"],
-        "arial_bold": ["Merriweather-Light.otf"],  # Use Merriweather for all text
-        "arial_black": ["Merriweather-Light.otf"],
-        "times": ["Merriweather-Light.otf"],
-        "comic_speech": ["Merriweather-Light.otf"],
-        "comic_bold": ["Merriweather-Light.otf"],
-        "impact": ["Merriweather-Light.otf"],
-        "thought": ["Merriweather-Light.otf"],
-        "narration": ["Merriweather-Light.otf"]
-    }
-    
-    # Try uploaded fonts first
-    if font_name in uploaded_fonts:
-        for font_file in uploaded_fonts[font_name]:
-            font_path = os.path.join(fonts_dir, font_file)
-            if os.path.exists(font_path):
-                try:
-                    font = ImageFont.truetype(font_path, size)
-                    print(f"🎨 Using uploaded font: {font_file} (size {size})")
-                    return font
-                except (IOError, OSError) as e:
-                    print(f"Could not load uploaded font {font_file}: {e}")
-                    continue
-    
-    system = platform.system()
-    
-    # SECOND PRIORITY: System fonts (macOS)
-    if system == "Darwin":  # macOS
-        # These are common macOS system fonts. Consider adding more comic-like ones
-        # if available on macOS by default, or relying on uploads.
-        font_mappings = {
-            "arial": "/System/Library/Fonts/Helvetica.ttc",
-            "arial_bold": "/System/Library/Fonts/Helvetica Bold.ttf" if os.path.exists("/System/Library/Fonts/Helvetica Bold.ttf") else "/System/Library/Fonts/Helvetica.ttc",
-            "arial_black": "/System/Library/Fonts/Arial Black.ttf" if os.path.exists("/System/Library/Fonts/Arial Black.ttf") else "/System/Library/Fonts/Helvetica.ttc",
-            "times": "/System/Library/Fonts/Times.ttc",
-            "comic_speech": "/System/Library/Fonts/Arial.ttf" if os.path.exists("/Library/Fonts/Arial.ttf") else "/System/Library/Fonts/Helvetica.ttc", # More readable
-            "comic_bold": "/System/Library/Fonts/Impact.ttf" if os.path.exists("/System/Library/Fonts/Impact.ttf") else "/System/Library/Fonts/Helvetica.ttc", # More impact
-            "impact": "/System/Library/Fonts/Impact.ttf" if os.path.exists("/System/Library/Fonts/Impact.ttf") else "/System/Library/Fonts/Helvetica.ttc",
-            "thought": "/System/Library/Fonts/Apple Chancery.ttf" if os.path.exists("/System/Library/Fonts/Apple Chancery.ttf") else "/System/Library/Fonts/Helvetica.ttc", # More whimsical
-            "narration": "/System/Library/Fonts/Times.ttc"
-        }
-        
-        # Try the mapped font
-        mapped_font = font_mappings.get(font_name)
-        if mapped_font and os.path.exists(mapped_font):
-            try:
-                if mapped_font.endswith(".ttc"):
-                    for i in range(5):
-                        try:
-                            font = ImageFont.truetype(mapped_font, size, index=i)
-                            print(f"✅ Using system font: {os.path.basename(mapped_font)} (index {i}, size {size})")
-                            return font
-                        except (IOError, OSError):
-                            continue
-                else:
-                    font = ImageFont.truetype(mapped_font, size)
-                    print(f"✅ Using system font: {os.path.basename(mapped_font)} (size {size})")
-                    return font
-            except (IOError, OSError):
-                pass
-        
-        # THIRD PRIORITY: Common macOS backup fonts
-        backup_fonts = [
-            "/System/Library/Fonts/Helvetica.ttc",
-            "/System/Library/Fonts/Times.ttc", 
-            "/System/Library/Fonts/Courier.ttc",
-            "/Library/Fonts/Arial.ttf",
-            "/System/Library/Fonts/Monaco.ttf"
-        ]
-        
-        for backup_font in backup_fonts:
-            if os.path.exists(backup_font):
-                try:
-                    if backup_font.endswith(".ttc"):
-                        for i in range(3):
-                            try:
-                                font = ImageFont.truetype(backup_font, size, index=i)
-                                print(f"✅ Using backup font: {os.path.basename(backup_font)} (size {size})")
-                                return font
-                            except (IOError, OSError):
-                                continue
-                    else:
-                        font = ImageFont.truetype(backup_font, size)
-                        print(f"✅ Using backup font: {os.path.basename(backup_font)} (size {size})")
-                        return font
-                except (IOError, OSError):
-                    continue
-    
-    else:  # Windows/Linux - simplified fallback
-        common_fonts = ["arial.ttf", "times.ttf", "helvetica.ttf", "courier.ttf"]
-        font_dirs = []
-        
-        if system == "Windows":
-            font_dirs = [os.environ.get("WINDIR", "C:\\Windows") + "\\Fonts"]
-        else:  # Linux
-            font_dirs = ["/usr/share/fonts/truetype", "/usr/share/fonts", os.path.expanduser("~/.fonts")]
-        
-        for font_dir in font_dirs:
-            for font_file in common_fonts:
-                font_path = os.path.join(font_dir, font_file)
-                if os.path.exists(font_path):
-                    try:
-                        font = ImageFont.truetype(font_path, size)
-                        print(f"✅ Using system font: {font_file} (size {size})")
-                        return font
-                    except (IOError, OSError):
-                        continue
-
-    # FINAL FALLBACK: Pillow default
-    print(f"⚠️ All fonts failed, using Pillow default for '{font_name}' (size {size})")
-    return ImageFont.load_default()
+from .comic_text_utils import ComicTextRenderer, TextBubble
+from .font_utils import get_system_font, wrap_text_pil, draw_text_with_outline
 
 # --- Load Fonts using the improved function ---
 # Consider making these dynamic later based on total panel size or user preference
@@ -175,51 +45,6 @@ except Exception as e:
 
 
 
-
-def wrap_text_pil(draw: ImageDraw.Draw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> List[str]:
-    """
-    Advanced text wrapping using PIL's textlength method for accurate measurements.
-    Handles very long words by breaking them if necessary.
-    """
-    if not text or not text.strip():
-        return []
-
-    lines = []
-    current_line_words = []
-
-    words = text.split(' ') # Split by space
-    
-    for word in words:
-        # Check if adding the next word exceeds max_width
-        test_line = ' '.join(current_line_words + [word])
-        if draw.textlength(test_line, font=font) <= max_width:
-            current_line_words.append(word)
-        else:
-            # Current word doesn't fit
-            if current_line_words:
-                # If there's content in the current line, add it
-                lines.append(' '.join(current_line_words))
-                current_line_words = [word] # Start new line with the current word
-            else:
-                # This means a single word is longer than max_width.
-                # We need to break this word.
-                broken_word_lines = []
-                temp_word_part = ""
-                for char in word:
-                    if draw.textlength(temp_word_part + char, font=font) <= max_width:
-                        temp_word_part += char
-                    else:
-                        broken_word_lines.append(temp_word_part)
-                        temp_word_part = char
-                if temp_word_part:
-                    broken_word_lines.append(temp_word_part)
-                lines.extend(broken_word_lines)
-                current_line_words = [] # Reset for next words
-    
-    if current_line_words:
-        lines.append(' '.join(current_line_words))
-        
-    return lines
 
 def calculate_dynamic_font_size(draw: ImageDraw.Draw, text: str, max_width: int, max_height: int, base_font_obj: ImageFont.FreeTypeFont, min_font_size: int = 28) -> ImageFont.FreeTypeFont:
     """ Calculate optimal font size that fits within given dimensions, starting from a base font object and shrinking if necessary. """
@@ -262,21 +87,6 @@ def calculate_dynamic_font_size(draw: ImageDraw.Draw, text: str, max_width: int,
 
     return optimal_font
 
-def draw_text_with_outline(draw: ImageDraw.Draw, xy: Tuple[int, int], text: str, 
-                           font: ImageFont.FreeTypeFont, text_color: str, 
-                           outline_color: str, outline_width: int):
-    """
-    Draws text with an outline.
-    """
-    x, y = xy
-    # Draw outline
-    if outline_width > 0:
-        for offset_x in range(-outline_width, outline_width + 1):
-            for offset_y in range(-outline_width, outline_width + 1):
-                if offset_x * offset_x + offset_y * offset_y <= outline_width * outline_width: # Circle for smoother outline
-                    draw.text((x + offset_x, y + offset_y), text, font=font, fill=outline_color)
-    # Draw main text
-    draw.text(xy, text, font=font, fill=text_color)
 def add_dialogues_and_sfx_to_panel(
     panel_image: Image.Image,
     dialogues: List[Dialogue],
@@ -285,227 +95,72 @@ def add_dialogues_and_sfx_to_panel(
     character_names: List[str] = None
 ) -> Image.Image:
     """
-    Adds dialogues, thought bubbles, narration, and SFX to a single comic panel image.
-    Uses the new improved comic text rendering system with smart positioning.
+    Adds a single wide speech bubble at the bottom center of the panel, combining all dialogue lines.
+    The bubble is horizontally wide, vertically compact, and avoids overlapping character faces.
     """
-    from .comic_text_utils import ComicTextRenderer, TextBubble
-    
+ 
     if not dialogues:
         return panel_image
-    
-    print(f"🎯 Processing panel with FRAME-SPECIFIC dimensions {panel_width}x{panel_height} and {len(dialogues)} dialogues")
-    
+
+    # Combine all dialogue lines, preserving speaker names
+    combined_lines = []
+    for dialogue in dialogues:
+        if hasattr(dialogue, 'speaker') and dialogue.speaker:
+            combined_lines.append(f"{dialogue.speaker}: {dialogue.text}")
+        else:
+            combined_lines.append(dialogue.text)
+    combined_text = "\n".join(combined_lines)
+
     renderer = ComicTextRenderer()
     result = panel_image.copy()
-    
-    # Scale font sizes based on panel size - but keep them readable
-    size_factor = min(panel_width / 800, panel_height / 600, 1.0)  # Scale down for smaller panels
-    # Don't let size_factor go too small - keep text readable
-    size_factor = max(size_factor, 0.6)  # Minimum 60% of original size for readability
-    print(f"📏 Frame-specific size factor: {size_factor:.2f} for {panel_width}x{panel_height} panel")
-    
-    # ALWAYS use simple positioning to prevent overlaps - more reliable than smart positioning
-    positioned_dialogues = dialogues
-    try:
-        from .simple_positioning import simple_position_dialogues
-        positioned_dialogues, analysis = simple_position_dialogues(
-            panel_image, dialogues, character_names
-        )
-        print(f"📍 Simple positioning: Prevented overlaps for {len(positioned_dialogues)} bubbles")
-    except Exception as e:
-        print(f"❌ Simple positioning failed: {e}")
-        # Fallback to manual collision avoidance
-        positioned_dialogues = []
-        used_positions = []
-        
-        for i, dialogue in enumerate(dialogues):
-            # Calculate safe position manually with frame-relative spacing
-            safe_margin = max(20, int(panel_width * 0.05))  # 5% of panel width as margin
-            
-            # Try different positions until we find one without collision
-            candidate_positions = [
-                (safe_margin, safe_margin),                    # Top-left
-                (panel_width - 400 * size_factor, safe_margin),         # Top-right  
-                (safe_margin, panel_height - 120 * size_factor),         # Bottom-left
-                (panel_width - 400 * size_factor, panel_height - 120 * size_factor), # Bottom-right
-                (panel_width//2 - 200 * size_factor, safe_margin),      # Top-center
-                (panel_width//2 - 200 * size_factor, panel_height - 120 * size_factor), # Bottom-center
-                (safe_margin, panel_height//2 - 60 * size_factor),       # Mid-left
-                (panel_width - 400 * size_factor, panel_height//2 - 60 * size_factor), # Mid-right
-                (panel_width//2 - 200 * size_factor, panel_height//2 - 60 * size_factor), # Center
-            ]
-            
-            # Add offset for each subsequent dialogue to avoid overlaps - use more spacing
-            for j, (base_x, base_y) in enumerate(candidate_positions):
-                final_x = base_x + (i * 80 * size_factor)  # More spacing between bubbles
-                final_y = base_y + (i * 50 * size_factor)
-                
-                # Keep within bounds
-                final_x = max(safe_margin, min(final_x, panel_width - 400 * size_factor))
-                final_y = max(safe_margin, min(final_y, panel_height - 120 * size_factor))
-                
-                # Check if this position conflicts with already placed bubbles
-                bubble_w = int(min(250 * size_factor, panel_width * 0.35))  # Narrower width - max 35%
-                bubble_h = int(min(150 * size_factor, panel_height * 0.35))  # Taller height - max 35%
-                bubble_rect = (final_x, final_y, bubble_w, bubble_h)
-                has_conflict = False
-                
-                for used_rect in used_positions:
-                    if not (bubble_rect[0] + bubble_rect[2] < used_rect[0] or 
-                           used_rect[0] + used_rect[2] < bubble_rect[0] or
-                           bubble_rect[1] + bubble_rect[3] < used_rect[1] or 
-                           used_rect[1] + used_rect[3] < bubble_rect[1]):
-                        has_conflict = True
-                        break
-            
-                if not has_conflict:
-                    # Found a good position
-                    used_positions.append(bubble_rect)
-                    
-                    # Update dialogue position
-                    if hasattr(dialogue, '__dict__'):
-                        new_dialogue = type(dialogue)(**dialogue.__dict__)
-                        new_dialogue.position = "center"
-                        if hasattr(new_dialogue, 'x_coord'):
-                            new_dialogue.x_coord = int(final_x)
-                            new_dialogue.y_coord = int(final_y)
-                    else:
-                        new_dialogue = dialogue
-                    
-                    positioned_dialogues.append(new_dialogue)
-                    break
-            else:
-                # If no position found, just add with large offset
-                positioned_dialogues.append(dialogue)
-        
-        print(f"🔧 Manual collision avoidance: {len(positioned_dialogues)} bubbles positioned")
-    
-    # Convert dialogues to TextBubbles and render them with FORCED positioning
-    rendered_positions = []  # Track what we've actually rendered to prevent overlaps
-    
-    for i, dialogue in enumerate(positioned_dialogues):
-        if not dialogue.text or not dialogue.text.strip():
-            continue
 
-        # Map dialogue type to bubble type (handle scream -> speech with shouting emotion)
-        bubble_type = dialogue.type
-        bubble_emotion = dialogue.emotion
-        
-        # Handle "scream" type by converting to speech with shouting emotion
-        if dialogue.type == "scream":
-            bubble_type = "speech"
-            bubble_emotion = "shouting"
-        
-        # Use a more distributed default spread pattern
-        default_positions = [
-            (int(panel_width * 0.1), int(panel_height * 0.1)),      # Top-left
-            (int(panel_width * 0.6), int(panel_height * 0.1)),      # Top-right
-            (int(panel_width * 0.1), int(panel_height * 0.6)),      # Bottom-left
-            (int(panel_width * 0.6), int(panel_height * 0.6)),      # Bottom-right
-            (int(panel_width * 0.35), int(panel_height * 0.1)),     # Top-center
-            (int(panel_width * 0.35), int(panel_height * 0.6)),     # Bottom-center
-        ]
-        
-        if i < len(default_positions):
-            forced_x, forced_y = default_positions[i]
-        else:
-            forced_x = int(50 * size_factor + ((i % 3) * panel_width * 0.3))  # Distribute across width
-            forced_y = int(50 * size_factor + ((i // 3) * panel_height * 0.4))  # Distribute across height
-        
-        # Override with coordinates from positioning system if available and valid
-        if hasattr(dialogue, 'x_coord') and hasattr(dialogue, 'y_coord'):
-            if dialogue.x_coord is not None and dialogue.y_coord is not None:
-                # Scale coordinates to current panel size if they seem to be from a different scale
-                pos_x, pos_y = dialogue.x_coord, dialogue.y_coord
-                
-                # If coordinates are outside current panel, assume they're from a different scale and adjust
-                if pos_x >= panel_width or pos_y >= panel_height:
-                    # Assume coordinates were calculated for 800x600 and scale down
-                    scale_x = panel_width / 800
-                    scale_y = panel_height / 600
-                    pos_x = int(pos_x * scale_x)
-                    pos_y = int(pos_y * scale_y)
-                    print(f"📏 Scaled coordinates from ({dialogue.x_coord}, {dialogue.y_coord}) to ({pos_x}, {pos_y}) for {panel_width}x{panel_height} panel")
-                
-                # Ensure coordinates are within panel bounds
-                forced_x = max(20, min(pos_x, panel_width - 150))
-                forced_y = max(20, min(pos_y, panel_height - 80))
-                print(f"📍 Using positioned coordinates for bubble {i}: ({forced_x}, {forced_y})")
-            else:
-                print(f"⚠️ No coordinates found for bubble {i}, using default: ({forced_x}, {forced_y})")
-        else:
-            print(f"⚠️ No coordinates found for bubble {i}, using default: ({forced_x}, {forced_y})")
-        
-        # Final collision check against already rendered bubbles with frame-relative bubble size
-        bubble_w = int(min(250 * size_factor, panel_width * 0.35))  # Narrower width - max 35%
-        bubble_h = int(min(150 * size_factor, panel_height * 0.35))  # Taller height - max 35%
-        bubble_rect = (forced_x, forced_y, bubble_w, bubble_h)
-        print(f"💬 Frame-specific bubble {i} size: {bubble_w}x{bubble_h} for {panel_width}x{panel_height} panel")
-        
-        collision_attempts = 0
-        while (any(not (bubble_rect[0] + bubble_rect[2] + 20 < rendered[0] or 
-                       rendered[0] + rendered[2] + 20 < bubble_rect[0] or
-                       bubble_rect[1] + bubble_rect[3] + 20 < rendered[1] or 
-                       rendered[1] + rendered[3] + 20 < bubble_rect[1]) 
-                  for rendered in rendered_positions) and collision_attempts < 10):
-            # Move bubble to avoid collision with more spacing
-            forced_x += int(80 * size_factor)
-            forced_y += int(50 * size_factor)
-            # Keep within panel bounds
-            forced_x = max(20, min(forced_x, panel_width - bubble_w - 20))
-            forced_y = max(20, min(forced_y, panel_height - bubble_h - 20))
-            bubble_rect = (forced_x, forced_y, bubble_w, bubble_h)
-            collision_attempts += 1
-            print(f"🔄 Adjusted bubble {i} position to avoid collision: ({forced_x}, {forced_y})")
-        
-        # Track this bubble's position
-        rendered_positions.append(bubble_rect)
-        
-        print(f"🎯 FORCING bubble at exact position: ({forced_x}, {forced_y}) - '{dialogue.speaker}: {dialogue.text[:30]}...'")
-        
-        # Create TextBubble with FORCED coordinates and frame-scaled style
-        bubble = TextBubble(
-            text=dialogue.text,
-            position=(forced_x, forced_y),  # FORCE the positioned coordinates
-            bubble_type=bubble_type,
-            emotion=bubble_emotion,
-            speaker_position=dialogue.position if hasattr(dialogue, 'position') else "center"
-        )
-        
-        # Adjust bubble style for panel size
-        if bubble.style is None:
-            bubble.style = renderer.default_styles.get(bubble_type, renderer.default_styles["speech"])
-        
-        # Scale font size based on panel dimensions - keep it readable
-        original_font_size = bubble.style.font_size
-        scaled_font_size = max(24, int(original_font_size * size_factor))  # Minimum 24px for readability
-        bubble.style.font_size = scaled_font_size
-        
-        # Scale padding but keep it reasonable
-        bubble.style.padding = max(15, int(bubble.style.padding * size_factor))
-        
-        # Add speaker name reference
-        if dialogue.speaker:
-            bubble.speaker_name = dialogue.speaker
-            if bubble_type in ["speech", "thought"]:
-                bubble.text = f"{dialogue.speaker}: {dialogue.text}"
-        
-        # Render the bubble directly at specified coordinates
-        try:
-            result = renderer.render_text_bubble_at_position(result, bubble, forced_x, forced_y, panel_width, panel_height)
-            
-            # Get actual bubble size for tracking
-            actual_bubble_size = renderer.calculate_bubble_size(bubble.text, bubble.style, panel_width // 2)
-            print(f"📐 Bubble size: {actual_bubble_size[0]}x{actual_bubble_size[1]} at final position ({forced_x}, {forced_y})")
-            print(f"✅ Successfully rendered bubble at ({forced_x}, {forced_y})")
-        except AttributeError:
-            # Fallback to original method if new method doesn't exist
-            result = renderer.render_text_bubble(result, bubble, panel_width, panel_height)
-            print(f"✅ Rendered bubble {i} using fallback method")
-        except Exception as e:
-            print(f"❌ Error rendering text bubble {i}: {e}")
-            # Continue with next bubble instead of failing completely
+    # Use a wide, compact bubble style
+    bubble_style = renderer.default_styles["speech"]
+    # Make font size dynamic and readable
+    bubble_style.font_size = max(18, int(panel_height * 0.06))  # Dynamic, readable font size
+    bubble_style.padding = max(5, int(panel_height * 0.03))
+    bubble_style.corner_radius = 0
+
+    # Calculate bubble size for the combined text
+    max_bubble_width = int(panel_width * 0.80)  # Reduced from 85% to 60% for narrower bubbles
+    max_bubble_height = int(panel_height * 0.15)  # Increased from 15% to 35% for more text
+    bubble_width, bubble_height = renderer.calculate_bubble_size(combined_text, bubble_style, max_bubble_width)
+    bubble_width = min(bubble_width, max_bubble_width)
+    bubble_height = min(bubble_height, max_bubble_height)
     
+    print(f"🔍 DEBUG: Panel size: {panel_width}x{panel_height}")
+    print(f"🔍 DEBUG: Max bubble size: {max_bubble_width}x{max_bubble_height}")
+    print(f"🔍 DEBUG: Calculated bubble size: {bubble_width}x{bubble_height}")
+    print(f"🔍 DEBUG: Combined text: '{combined_text[:50]}...'")
+
+    # Bottom edge positioning with margin to stay within panel bounds
+    bubble_x = (panel_width - bubble_width) // 2  # Horizontally centered
+    bubble_y = max(0, panel_height - bubble_height - 10)  # 10px margin from bottom, but don't go below 0
+    
+    # ALTERNATIVE POSITIONING OPTIONS (uncomment to use):
+    # bubble_x = 20  # Left-aligned, 20px from left edge
+    # bubble_x = panel_width - bubble_width - 20  # Right-aligned, 20px from right edge
+    # bubble_y = (panel_height - bubble_height) // 2  # Vertically centered
+    # bubble_y = 20  # Top-aligned, 20px from top
+    # bubble_y = panel_height - bubble_height - 50  # Higher from bottom (50px margin)
+
+    print(f"🔍 DEBUG: Bubble position: ({bubble_x}, {bubble_y})")
+
+    # Create a TextBubble for the combined text
+    bubble = TextBubble(
+        text=combined_text,
+        position=(bubble_x, bubble_y),
+        bubble_type="speech",
+        emotion="normal",
+        speaker_position="bottom",
+        style=bubble_style
+    )
+    
+    # Set the calculated size on the bubble so renderer doesn't recalculate it
+    bubble._calculated_size = (bubble_width, bubble_height)
+
+    # Render the single bubble at the specified position and size
+    result = renderer.render_text_bubble_at_position(result, bubble, bubble_x, bubble_y, panel_width, panel_height)
     return result
 
 
@@ -547,14 +202,15 @@ def map_to_allowed_sdxl_dimensions(width: int, height: int) -> tuple:
     
     return best_match
 
+
 def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue]]], character_names: List[str] = None) -> Tuple[Image.Image, List[dict]]:
     """
     Creates a multi-panel comic sheet.
-    Layout for 6 panels with dynamic layout structure.
+    Layout for 6 panels, specifically Variant 15: "Dominant Panel with Visual Inset".
     """
     num_panels = len(panels_with_images)
     if num_panels == 0:
-        return Image.new('RGB', (800, 600), color='gray'), [] # Return empty gray image and empty locations
+        return Image.new('RGB', (800, 600), color='gray'), []
 
     panel_locations = []
 
@@ -562,123 +218,81 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
         gutter = 30
         outer_margin = 40
 
-        # NARRATIVE-FOCUSED 6-PANEL LAYOUT WITH SDXL DIMENSIONS
-        # Each panel tailored for storytelling beats using valid SDXL sizes
+        # --- VARIANT 15: Dominant Panel with Visual Inset ---
+        # Overall sheet dimensions targeting a square SDXL resolution
+        sheet_target_width = 1024 # SDXL square width
+        sheet_target_height = 1024 # SDXL square height
 
-        panel1_w, panel1_h = 768, 1344     # Strong vertical intro (scene setup / entry)
-        panel2_w, panel2_h = 1344, 768 
-            # Establishing shot or zoom (world / space)
-        panel3_w, panel3_h = 1344, 768      # Super wide reveal or climax (turning point)
-        panel4_w, panel4_h = 1344, 768      # Aftermath (character response / world state, updated for better aspect ratio)
-        panel5_w, panel5_h = 1216, 832     # Emotional close-up / reflection
-        panel6_w, panel6_h = 1216, 832    # Closing beat / ambiguity / full stop
+        # Calculate available content space
+        content_width_area = sheet_target_width - (2 * outer_margin)
+        content_height_area = sheet_target_height - (2 * outer_margin)
 
-        # Calculate sheet size based on the narrative layout:
-        # Layout structure:
-        # [ Panel 1 (wide) ]    [ Panel 2 ]
-        #                       [ Panel 3 ]
-        # [ Panel 4 (wide)              ]
-        # [ Panel 5 ][ Panel 6 ]
+        # Panel 1 (Dominant Left Panel)
+        # It takes up about 60% of the width and about 70% of the height
+        panel1_w = int(content_width_area * 0.6) - (gutter // 2) # Account for gutter
+        panel1_h = int(content_height_area * 0.7) - (gutter // 2) # Account for gutter
+
+        # Remaining width for right column panels (2, 3, 4)
+        right_col_w = content_width_area - panel1_w - gutter
+
+        # Remaining height for bottom row panels (5, 6)
+        bottom_row_h = content_height_area - panel1_h - gutter
+
+        # Panels 2, 3, 4 (Stacked on Right of Panel 1)
+        panel2_w = right_col_w
+        panel3_w = right_col_w
+        panel4_w = right_col_w
         
-        # Calculate positions for narrative layout
-        top_row_height = max(panel1_h, panel2_h + panel3_h + gutter)
+        # 3 panels vertically, 2 gutters between them
+        panel2_h = (panel1_h - (2 * gutter)) // 3
+        panel3_h = panel2_h
+        panel4_h = panel2_h
+
+        # Panels 5, 6 (Bottom Row)
+        # These span the full content width below Panel 1 and the right stack
+        panel5_w = (content_width_area - gutter) // 2
+        panel6_w = panel5_w
         
-        # Fixed width calculation to ensure all panels fit
-        extra_right_spacing = 80  # Additional space for moving panels 2&3 right (match positioning)
-        right_column_width = max(panel2_w, panel3_w)  # Width of right column (panels 2&3)
-        wide_panel_width = panel4_w  # Width of wide panel 4
-        bottom_row_width = panel5_w + panel6_w + gutter  # Width of bottom row (panels 5&6)
+        panel5_h = bottom_row_h
+        panel6_h = bottom_row_h
         
-        # OPTIMIZED sheet size calculation for better visibility
-        # Make layout more compact - limit maximum width for better viewing
-        max_sheet_width = 2400  # Increased width to accommodate wider panel 1 and extra spacing
-        
-        content_width = max(
-            panel1_w + right_column_width + gutter + extra_right_spacing,  # Top row: Panel 1 + spacing + (Panel 2/3)
-            wide_panel_width,  # Middle row: Panel 4
-            bottom_row_width   # Bottom row: Panel 5 + Panel 6
-        )
-        
-        # If content is too wide, scale it down proportionally
-        if content_width > max_sheet_width:
-            scale_factor = max_sheet_width / content_width
-            # Reduce panel sizes proportionally but keep minimum readable size
-            scale_factor = max(scale_factor, 0.7)  # Don't scale smaller than 70%
-            print(f"🔧 Scaling layout by {scale_factor:.2f} to fit within {max_sheet_width}px width")
-        else:
-            scale_factor = 1.0
-        
-        sheet_width = min(content_width + 2*outer_margin, max_sheet_width + 2*outer_margin)
-        
-        # Sheet height calculation - OPTIMIZED for better viewing
-        sheet_height = outer_margin + max(panel1_h, panel2_h + panel3_h + gutter) + panel4_h + max(panel5_h, panel6_h) + 3*gutter + outer_margin
-        
-        print(f"🔧 Layout calculation:")
-        print(f"   Top row height: {top_row_height}")
-        print(f"   Content width: {content_width}")
-        print(f"   Bottom row width: {bottom_row_width}")
-        print(f"   Sheet dimensions: {sheet_width}x{sheet_height}")
-        print(f"   Individual panel sizes:")
-        print(f"     Panel 1: {panel1_w}x{panel1_h}")  
-        print(f"     Panel 2: {panel2_w}x{panel2_h}")
-        print(f"     Panel 3: {panel3_w}x{panel3_h}")
-        print(f"     Panel 4: {panel4_w}x{panel4_h}")
-        print(f"     Panel 5: {panel5_w}x{panel5_h}")
-        print(f"     Panel 6: {panel6_w}x{panel6_h}")
+        # Final sheet dimensions
+        sheet_width = sheet_target_width
+        sheet_height = sheet_target_height
         
         # Create comic sheet with calculated dimensions
         comic_sheet = Image.new('RGB', (sheet_width, sheet_height), color='white')
         draw = ImageDraw.Draw(comic_sheet)
 
-        print(f"📐 Comic sheet dimensions: {sheet_width}x{sheet_height}")
-        print(f"📖 Narrative layout: Setup(1) → Tension(2) → Reveal(3) → Action(4) → Fallout(5) → Resolution(6)")
+        print(f"\n--- Variant 15: Dominant Panel with Visual Inset ---")
+        print(f"📐 Comic sheet dimensions: {sheet_width}x{sheet_height} (Targeted SDXL)")
+        print(f"   Calculated content area: {content_width_area}x{content_height_area}")
+        print(f"   Individual panel sizes:")
+        print(f"     Panel 1 (Dominant): {panel1_w}x{panel1_h}")  
+        print(f"     Panels 2,3,4 (Right Stack): {panel2_w}x{panel2_h}")
+        print(f"     Panels 5,6 (Bottom Row): {panel5_w}x{panel5_h}")
         
-        # Apply scaling if needed for better viewing
-        if scale_factor < 1.0:
-            panel1_w = int(panel1_w * scale_factor)
-            panel1_h = int(panel1_h * scale_factor)
-            panel2_w = int(panel2_w * scale_factor)
-            panel2_h = int(panel2_h * scale_factor)
-            panel3_w = int(panel3_w * scale_factor)
-            panel3_h = int(panel3_h * scale_factor)
-            panel4_w = int(panel4_w * scale_factor)
-            panel4_h = int(panel4_h * scale_factor)
-            panel5_w = int(panel5_w * scale_factor)
-            panel5_h = int(panel5_h * scale_factor)
-            panel6_w = int(panel6_w * scale_factor)
-            panel6_h = int(panel6_h * scale_factor)
-            print(f"🔧 Applied scaling - new panel sizes:")
-            print(f"   Panel 1: {panel1_w}×{panel1_h}, Panel 2: {panel2_w}×{panel2_h}")
-        
-        # Calculate exact positions for each panel - OPTIMIZED positioning
+        # Calculate exact positions for each panel
+        # Panel 1
         panel1_x = outer_margin
         panel1_y = outer_margin
         
-        # Add extra spacing to move panels 2 & 3 further right
-        extra_right_spacing = 80  # Additional space to push panels 2&3 right
-        panel2_x = outer_margin + panel1_w + gutter + extra_right_spacing
+        # Panels 2, 3, 4 (Right Column)
+        panel2_x = outer_margin + panel1_w + gutter
         panel2_y = outer_margin
         
-        panel3_x = outer_margin + panel1_w + gutter + extra_right_spacing
+        panel3_x = panel2_x
         panel3_y = outer_margin + panel2_h + gutter
         
-        # DEBUG: Verify panel 2 & 3 positions 
-        print(f"🔍 CRITICAL DEBUG - Panel 2 & 3 positioning:")
-        print(f"   Panel 1: {panel1_w}×{panel1_h} at ({panel1_x}, {panel1_y})")
-        print(f"   Panel 2: {panel2_w}×{panel2_h} at ({panel2_x}, {panel2_y}) - ends at ({panel2_x + panel2_w}, {panel2_y + panel2_h})")
-        print(f"   Panel 3: {panel3_w}×{panel3_h} at ({panel3_x}, {panel3_y}) - ends at ({panel3_x + panel3_w}, {panel3_y + panel3_h})")
-        print(f"   Sheet will be: {sheet_width}×{sheet_height}")
-        print(f"   Panel 2 fits horizontally: {panel2_x + panel2_w <= sheet_width}")
-        print(f"   Panel 3 fits horizontally: {panel3_x + panel3_w <= sheet_width}")
+        panel4_x = panel2_x
+        panel4_y = outer_margin + (2 * panel2_h) + (2 * gutter)
         
-        panel4_x = outer_margin
-        panel4_y = outer_margin + max(panel1_h, panel2_h + panel3_h + gutter) + gutter
-        
+        # Panels 5, 6 (Bottom Row)
         panel5_x = outer_margin
-        panel5_y = panel4_y + panel4_h + gutter
+        panel5_y = outer_margin + panel1_h + gutter # Below Panel 1
         
         panel6_x = outer_margin + panel5_w + gutter
-        panel6_y = panel4_y + panel4_h + gutter
+        panel6_y = panel5_y # Same y as Panel 5
         
         print(f"🎯 Panel positions:")
         print(f"   Panel 1: ({panel1_x}, {panel1_y}) size {panel1_w}x{panel1_h} -> ends at ({panel1_x + panel1_w}, {panel1_y + panel1_h})")
@@ -687,9 +301,8 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
         print(f"   Panel 4: ({panel4_x}, {panel4_y}) size {panel4_w}x{panel4_h} -> ends at ({panel4_x + panel4_w}, {panel4_y + panel4_h})")
         print(f"   Panel 5: ({panel5_x}, {panel5_y}) size {panel5_w}x{panel5_h} -> ends at ({panel5_x + panel5_w}, {panel5_y + panel5_h})")
         print(f"   Panel 6: ({panel6_x}, {panel6_y}) size {panel6_w}x{panel6_h} -> ends at ({panel6_x + panel6_w}, {panel6_y + panel6_h})")
-        print(f"   Sheet size: {sheet_width}x{sheet_height}")
         
-        # Check if any panels extend beyond sheet bounds
+        # Validate panel fitting within sheet (debug prints)
         panels_info = [
             (1, panel1_x, panel1_y, panel1_w, panel1_h),
             (2, panel2_x, panel2_y, panel2_w, panel2_h),
@@ -698,117 +311,69 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
             (5, panel5_x, panel5_y, panel5_w, panel5_h),
             (6, panel6_x, panel6_y, panel6_w, panel6_h)
         ]
-        
         for panel_num, x, y, w, h in panels_info:
-            if x + w > sheet_width or y + h > sheet_height:
-                print(f"⚠️ WARNING: Panel {panel_num} extends beyond sheet bounds!")
-                print(f"   Panel {panel_num} ends at ({x + w}, {y + h}) but sheet is {sheet_width}x{sheet_height}")
+            if x < outer_margin - 5 or y < outer_margin - 5 or \
+               x + w > sheet_width - (outer_margin - 5) or \
+               y + h > sheet_height - (outer_margin - 5):
+                print(f"⚠️ WARNING: Panel {panel_num} seems to extend or be too close to outer bounds!")
+                print(f"   Panel {panel_num} bounds: ({x}, {y}) to ({x+w}, {y+h}). Sheet: {sheet_width}x{sheet_height}")
             else:
-                print(f"✅ Panel {panel_num} fits within sheet bounds")
-        
-        # Layout configuration using calculated positions
+                print(f"✅ Panel {panel_num} fits well within sheet bounds.")
+
+
+        # Layout configuration using calculated positions and dimensions
         configs = [
-            # Panel 1: Wide Top-Left Panel - Initial Scene Setting
-            {"x": panel1_x, "y": panel1_y, "width": panel1_w, "height": panel1_h},
-            # Panel 2: Top Right Portrait - Character Focus/Inciting Incident  
-            {"x": panel2_x, "y": panel2_y, "width": panel2_w, "height": panel2_h},
-            # Panel 3: Bottom Right Portrait - Reaction/Echo
-            {"x": panel3_x, "y": panel3_y, "width": panel3_w, "height": panel3_h},
-            # Panel 4: Wide Middle Panel - Peak action
-            {"x": panel4_x, "y": panel4_y, "width": panel4_w, "height": panel4_h},
-            # Panel 5: Bottom Left - Emotional fallout
-            {"x": panel5_x, "y": panel5_y, "width": panel5_w, "height": panel5_h},
-            # Panel 6: Bottom Right - Resolution/humor
-            {"x": panel6_x, "y": panel6_y, "width": panel6_w, "height": panel6_h}
+            {"x": panel1_x, "y": panel1_y, "width": panel1_w, "height": panel1_h}, # Panel 1
+            {"x": panel2_x, "y": panel2_y, "width": panel2_w, "height": panel2_h}, # Panel 2
+            {"x": panel3_x, "y": panel3_y, "width": panel3_w, "height": panel3_h}, # Panel 3
+            {"x": panel4_x, "y": panel4_y, "width": panel4_w, "height": panel4_h}, # Panel 4
+            {"x": panel5_x, "y": panel5_y, "width": panel5_w, "height": panel5_h}, # Panel 5
+            {"x": panel6_x, "y": panel6_y, "width": panel6_w, "height": panel6_h}  # Panel 6
         ]
 
-        # Process each panel with the correct target dimensions
-        print(f"🎬 Processing {len(panels_with_images)} panels, have {len(configs)} configurations")
-        print(f"🔍 DEBUGGING: panels_with_images count = {len(panels_with_images)}")
-        print(f"🔍 DEBUGGING: configs count = {len(configs)}")
-        
-        if len(panels_with_images) != 6:
-            print(f"❌ CRITICAL ERROR: Expected 6 panels but got {len(panels_with_images)}!")
-        
-        if len(configs) != 6:
-            print(f"❌ CRITICAL ERROR: Expected 6 configs but got {len(configs)}!")
+        if len(panels_with_images) != 6 or len(configs) != 6:
+            print(f"❌ CRITICAL ERROR: Panel count mismatch. Expected 6, got {len(panels_with_images)} images and {len(configs)} configs.")
+            return Image.new('RGB', (sheet_width, sheet_height), color='red'), []
         
         for idx, (panel_img, dialogues) in enumerate(panels_with_images):
-            print(f"🎯 Processing panel {idx+1}/{len(panels_with_images)}...")
+            config = configs[idx]
+            x, y = config["x"], config["y"]
+            panel_w, panel_h = config["width"], config["height"]
+
+            print(f"🎨 Placing Panel {idx+1}: Target {panel_w}x{panel_h} at ({x}, {y})")
+
+            # First resize the panel image to target size
+            resized_panel = panel_img.resize((panel_w, panel_h), Image.Resampling.LANCZOS)
             
-            if idx < len(configs):
-                config = configs[idx]
-                x, y = config["x"], config["y"]
-                panel_w, panel_h = config["width"], config["height"]
+            # Then add bubbles to the resized panel
+            processed_img = add_dialogues_and_sfx_to_panel(
+                resized_panel, dialogues, panel_w, panel_h, character_names
+            )
+            
+            comic_sheet.paste(processed_img, (x, y))
+            
+            # Draw panel border
+            border_coords = (x - 2, y - 2, x + panel_w + 2, y + panel_h + 2)
+            draw.rectangle(border_coords, outline="black", width=3)
+            
+            panel_locations.append({
+                "panel": idx + 1,
+                "x": x,
+                "y": y,
+                "width": panel_w,
+                "height": panel_h
+            })
+            print(f"✅ Panel {idx+1} successfully placed.")
 
-                print(f"   Panel {idx+1} at position ({x}, {y}) with dimensions {panel_w}x{panel_h}")
-                print(f"   Panel {idx+1} will end at ({x + panel_w}, {y + panel_h})")
-                
-                # Check if position is within sheet bounds
-                if x + panel_w > sheet_width or y + panel_h > sheet_height:
-                    print(f"⚠️ WARNING: Panel {idx+1} extends beyond sheet bounds!")
-                    print(f"   Panel ends at ({x + panel_w}, {y + panel_h}) but sheet is {sheet_width}x{sheet_height}")
-                    print(f"   X overflow: {max(0, (x + panel_w) - sheet_width)} pixels")
-                    print(f"   Y overflow: {max(0, (y + panel_h) - sheet_height)} pixels")
-                else:
-                    print(f"✅ Panel {idx+1} fits within sheet bounds")
-
-                # Process panel with dialogues using ACTUAL panel dimensions
-                processed_img = add_dialogues_and_sfx_to_panel(
-                    panel_img, dialogues, panel_w, panel_h, character_names
-                )
-                
-                # Resize the processed panel to fit the layout
-                resized_panel = processed_img.resize((panel_w, panel_h), Image.Resampling.LANCZOS)
-                
-                # CRITICAL DEBUG: Special attention to panels 2 & 3
-                if idx + 1 in [2, 3]:
-                    print(f"🚨 CRITICAL: About to paste panel {idx+1} at ({x}, {y})")
-                    print(f"   Panel {idx+1} size after resize: {resized_panel.size}")
-                    print(f"   Comic sheet size: {comic_sheet.size}")
-                    print(f"   Paste coordinates: ({x}, {y})")
-                    print(f"   Panel will occupy area: ({x}, {y}) to ({x + panel_w}, {y + panel_h})")
-                
-                comic_sheet.paste(resized_panel, (x, y))
-                
-                if idx + 1 in [2, 3]:
-                    print(f"✅ CRITICAL: Panel {idx+1} successfully pasted!")
-
-                # Draw panel border
-                border_coords = (x - 2, y - 2, x + panel_w + 2, y + panel_h + 2)
-                draw.rectangle(border_coords, outline="black", width=3)
-                
-                if idx + 1 in [2, 3]:
-                    print(f"✅ CRITICAL: Panel {idx+1} border drawn at {border_coords}")
-
-                panel_locations.append({
-                    "panel": idx + 1,
-                    "x": x,
-                    "y": y,
-                    "width": panel_w,
-                    "height": panel_h
-                })
-                
-                print(f"✅ Panel {idx+1} successfully placed at ({x}, {y}) - border at {border_coords}")
-            else:
-                print(f"❌ ERROR: Panel {idx+1} has no layout configuration! Only {len(configs)} configs available.")
-                print(f"❌ This panel will NOT be included in the final comic!")
-        
-        print(f"📊 FINAL SUMMARY:")
-        print(f"   Generated panels: {len(panels_with_images)}")
-        print(f"   Placed panels: {len(panel_locations)}")
-        print(f"   Missing panels: {len(panels_with_images) - len(panel_locations)}")
-
-    else:
-        # Fallback for other panel counts using simple grid
+    else: # Fallback for other panel counts (from original code)
         cols = 2 if num_panels <= 4 else 3
         rows = math.ceil(num_panels / cols)
 
-        gutter = 20  # Increased from 15
-        outer_margin = 35  # Increased from 25
-        sheet_target_width = 2400  # Increased from 1600
+        gutter = 30
+        outer_margin = 40
+        sheet_target_width = 2400 
         calculated_panel_width = (sheet_target_width - (cols + 1) * gutter - 2 * outer_margin) // cols
-        calculated_panel_height = int(calculated_panel_width * 0.75)  # 4:3 aspect ratio
+        calculated_panel_height = int(calculated_panel_width * 0.75) 
 
         sheet_width = cols * calculated_panel_width + (cols + 1) * gutter + 2 * outer_margin
         sheet_height = rows * calculated_panel_height + (rows + 1) * gutter + 2 * outer_margin
@@ -816,18 +381,12 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
         comic_sheet = Image.new('RGB', (sheet_width, sheet_height), 'white')
         draw = ImageDraw.Draw(comic_sheet)
 
-        # Map dimensions to allowed SDXL dimensions for Stable Diffusion compatibility
-        calculated_panel_width, calculated_panel_height = map_to_allowed_sdxl_dimensions(calculated_panel_width, calculated_panel_height)
-
-        # Process each panel with correct dimensions
         for idx, (panel_img, dialogues) in enumerate(panels_with_images):
             row = idx // cols
             col = idx % cols
             x = outer_margin + col * (calculated_panel_width + gutter) + gutter
             y = outer_margin + row * (calculated_panel_height + gutter) + gutter
 
-            # Process panel with dialogues using ACTUAL panel dimensions
-            print(f"🎯 Processing panel {idx+1} with dimensions {calculated_panel_width}x{calculated_panel_height}")
             processed_img = add_dialogues_and_sfx_to_panel(
                 panel_img, dialogues, calculated_panel_width, calculated_panel_height, character_names
             )
@@ -835,7 +394,6 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
             resized_img = processed_img.resize((calculated_panel_width, calculated_panel_height), Image.Resampling.LANCZOS)
             comic_sheet.paste(resized_img, (x, y))
 
-            # Add border
             border_coords = (x-2, y-2, x + calculated_panel_width + 2, y + calculated_panel_height + 2)
             draw.rectangle(border_coords, outline="black", width=3)
 
@@ -848,8 +406,6 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
             })
 
     return comic_sheet, panel_locations
-
-
 # Keep create_simple_comic_grid for pure fallback, but create_comic_sheet should be primary
 def create_simple_comic_grid(images):
     """Create a simple comic grid layout as fallback when more complex sheet creation fails"""

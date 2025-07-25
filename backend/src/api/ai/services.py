@@ -192,113 +192,109 @@ def generate_comic_scenario(prompt: str, genre: str = None, art_style: str = Non
     llm_base = get_openai_llm()
     llm = llm_base.with_structured_output(ScenarioSchema2)
 
-    # Get genre-specific guidance
     genre_lower = (genre or 'action').lower()
     art_style_lower = (art_style or 'comic book').lower()
     genre_guide = GENRE_MAPPINGS.get(genre_lower, GENRE_MAPPINGS["action"])
-    art_style_guide = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["manga"])
+    art_style_guide = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["comic book"])
 
-    # ABSOLUTE requirement for exactly 6 panels with user's structure
     system_prompt = f"""YOU MUST CREATE EXACTLY 6 PANELS. NO MORE, NO LESS.
+    The narrative MUST be tightly structured to fit these 6 panels.
 
-CONCEPT: {prompt}
-GENRE: {genre or 'determine from the concept'}
-ART STYLE: {art_style or 'determine from the genre'}
+    CONCEPT: {prompt}
+    GENRE: {genre or 'determine from the concept'}
+    ART STYLE: {art_style or 'determine from the genre'}
 
-CHARACTER DESIGN GUIDE (ABSOLUTELY ESSENTIAL FOR CONSISTENCY):
-- Based on the 'CONCEPT', identify the main characters and provide a detailed visual description for EACH of them.
-- For each character, include specific physical attributes (e.g., hair color, clothing, body type, unique features, accessories).
-- Example format: "For [Character Name]: [Detailed visual description of character's appearance, ensuring consistency]."
+    CHARACTER DESIGN GUIDE (ABSOLUTELY ESSENTIAL FOR CONSISTENCY):
+    - Based on the 'CONCEPT', identify the main characters. For EACH main character, provide a detailed, single-line visual description that is precise and visually distinct.
+    - Example Format: "For [Character Name]: [Detailed visual description of character's appearance, ensuring consistency for Stable Diffusion prompts, e.g., 'Elon Musk, 40s, slightly messy brown hair, wearing a casual grey crewneck t-shirt and dark jeans, friendly expression']. This description MUST be used every time the character appears."
 
+    IMPORTANT: These character designs MUST remain 100% consistent across all 6 panels in their visual representation (e.g., size, shape, color, costume details, unique features). DO NOT describe character changes unless it's an explicit transformation within the narrative.
 
-IMPORTANT: These character designs MUST remain 100% consistent across all 6 panels. Their size, shape, color, costume details, and unique features must NOT change unless explicitly part of a transformation in the narrative.
+    🎨 GENRE-SPECIFIC CREATIVE GUIDANCE:
+    - MOOD: {genre_guide['mood']} - Every dialogue and action must reflect this emotional tone.
+    - ATMOSPHERE: {genre_guide['atmosphere']} - The entire story world should feel {genre_guide['atmosphere']}.
+    - VISUAL STYLE: {art_style_guide}
+    - COLOR PALETTE: {genre_guide['palette']} - This influences the visual description of every scene.
+    - LIGHTING: {genre_guide['lighting']} - Describe lighting that creates {genre_guide['mood']} mood.
+    - VISUAL ELEMENTS: {genre_guide['visual_cues']} - Include these environmental and atmospheric details to enrich the scene.
 
+    The story MUST be written in the {genre_lower} genre with {genre_guide['mood']} tone throughout.
 
-🎨 GENRE-SPECIFIC CREATIVE GUIDANCE:
-- MOOD: {genre_guide['mood']} - Every dialogue and action must reflect this emotional tone
-- ATMOSPHERE: {genre_guide['atmosphere']} - The entire story world should feel {genre_guide['atmosphere']}
-- VISUAL STYLE: {art_style_guide}
-- COLOR PALETTE: {genre_guide['palette']} - This influences the visual description of every scene
-- LIGHTING: {genre_guide['lighting']} - Describe lighting that creates {genre_guide['mood']} mood
-- VISUAL ELEMENTS: {genre_guide['visual_cues']} - Include these environmental and atmospheric details
+    MANDATORY 6-PANEL STRUCTURE:
 
-The story MUST be written in the {genre_lower} genre with {genre_guide['mood']} tone throughout.
+    INTRODUCTION (Panels 1-2):
+    Panel 1: SETUP & CHARACTER INTRODUCTION
+    - Introduce main characters and setting in a normal, peaceful environment (e.g., a cozy kitchen, a vibrant city park shall be suitable according to the {genre_guide['mood']}).
+    - Show characters in their typical daily routine or relaxed state.
+    - Ensure the {genre_lower} mood and tone.
+    - Dialogue: Exactly two lines. One for character introduction/greeting, one line establishing the world or their routine. Keep tone light and conversational.
+    - VISUAL FRAMING: **Wide shot** or **establish shot** to introduce the full setting and all main characters clearly. Focus on clear view of characters in their environment.
+    - NARRATIVE PURPOSE: Establish the status quo and character dynamics BEFORE any conflict. Do NOT introduce the inciting incident here.
+    - VISUAL DETAILS: Explicitly reference and describe all main characters using their established design. Describe the scene's color palette, lighting, and visual elements.
 
-MANDATORY 6-PANEL STRUCTURE:
+    Panel 2: INCITING INCIDENT
+    - Something unexpected happens that changes everything. This should be the 'cinnamon on the crust' incident (a significant, surprising disruption).
+    - Show the moment that disrupts the normal world. Characters react with surprise, confusion, or concern.
+    - Dialogue: Exactly two lines. One line expressing surprise/reaction to the incident, one line questioning or acknowledging the disruption. Dialogue should show personality and relationship dynamics.
+    - VISUAL FRAMING: **Medium shot** or **close-up** on the inciting incident itself (e.g., an object being defiled, a sudden appearance), showing characters' immediate reactions clearly. Focus on the object or event causing the disruption AND the characters' expressions.
+    - NARRATIVE PURPOSE: Introduce the core conflict. This panel MUST pivot the story. Do NOT resolve anything here.
+    - VISUAL DETAILS: Highlight the source of the problem. Ensure characters show appropriate surprise/disgust. Maintain consistency with the Panel 1 setting if the incident occurs there (e.g., "In the cozy kitchen, the oven explodes..."). Explicitly reference and describe all main characters using their established design. Describe the scene's color palette, lighting, and visual elements.
 
-INTRODUCTION (Panels 1-2):
-Panel 1: SETUP & CHARACTER INTRODUCTION
-- Introduce main characters  and setting in a normal, peaceful environment, perhaps a cozy, dream-like kitchen or a peaceful city backdrop.
-- Show characters in their typical daily routine or relaxed state.
-- Genre-appropriate atmosphere: {genre or 'adventure'} mood and tone.
-- Dialogue: One line for character introduction/greeting, one line establishing the world or their routine. Keep tone light and conversational.
-- VISUAL FRAMING: Establish shot or wide shot to introduce the full setting and all main characters clearly. Clear view of characters in their environment.
-- NARRATIVE PURPOSE: Establish the status quo and character dynamics BEFORE any conflict. Do NOT introduce the inciting incident here.
-- VISUAL DETAILS: Ensure all characters are present, clearly rendered according to their design guide.
+    MAIN ACTION (Panels 3-5):
+    Panel 3: RISING ACTION - FIRST CHALLENGE
+    - Characters actively engage with the conflict/problem. Show them taking action or making important decisions.
+    - Build tension through character choices and obstacles.
+    - Dialogue: Exactly two lines. One line showing character determination or strategy, one line directly addressing the challenge. Show character personality through how they handle pressure.
+    - VISUAL FRAMING: **Action shot** or **medium shot**. Clearly depict the characters interacting with the challenge (e.g., confronting an antagonist, strategizing, beginning a journey). Show their full bodies if engaged in physical action, but keep their faces visible.
+    - NARRATIVE PURPOSE: Show the characters attempting to overcome the conflict, encountering initial obstacles. Tension should build.
+    - VISUAL DETAILS: Characters should be in dynamic poses, reflecting their action or decision. Maintain consistent character designs. Describe the scene's color palette, lighting, and visual elements.
 
-Panel 2: INCITING INCIDENT  
-- Something unexpected happens that changes everything. This should be the 'cinnamon on the crust' incident.
-- Show the moment that disrupts the normal world. Characters react with surprise, confusion, or concern.
-- Dialogue: One line expressing surprise/reaction to the incident, one line questioning or acknowledging the disruption. Dialogue should show personality and relationship dynamics.
-- VISUAL FRAMING: Medium shot or close-up on the inciting incident itself (e.g., an object being defiled), showing characters' immediate reactions clearly. Focus on the object or event causing the disruption and the characters' expressions.
-- NARRATIVE PURPOSE: Introduce the core conflict. This panel MUST pivot the story. Do NOT resolve anything here.
-- VISUAL DETAILS: Highlight the source of the problem, and ensure characters show appropriate surprise/disgust.
+    Panel 4: CLIMAX - PEAK CONFLICT
+    - The most intense, dramatic moment of the entire story. Highest emotional stakes and maximum tension.
+    - Genre-specific peak action (e.g., a major confrontation, a powerful attack, a crucial discovery).
+    - Dialogue: Exactly two lines. One line expressing intense emotions or a crucial decision, one line related to the core conflict's peak. Characters reveal their true nature under pressure.
+    - VISUAL FRAMING: **Close-up on the characters' faces** to capture intense emotions, or a **dynamic wide/medium shot** highlighting the peak action. The focal point MUST be the most dramatic element. Show the impact of the climax.
+    - NARRATIVE PURPOSE: This is the single most intense moment. All previous tension culminates here. Do NOT begin the resolution in this panel.
+    - VISUAL DETAILS: Exaggerate expressions if appropriate for genre. Show environmental damage or dramatic effects caused by the climax. Explicitly reference and describe all main characters using their established design. Describe the scene's color palette, lighting, and visual elements.
 
-MAIN ACTION (Panels 3-5):
-Panel 3: RISING ACTION - FIRST CHALLENGE
-- Characters actively engage with the conflict/problem. Show them taking action or making important decisions.
-- Build tension through character choices and obstacles.
-- Dialogue: One line showing character determination or strategy, one line directly addressing the challenge. Show character personality through how they handle pressure.
-- VISUAL FRAMING: Action shot or medium shot. Clearly depict the characters interacting with the challenge (e.g., confronting an antagonist or strategizing). Show their full bodies if engaged in physical action, but keep their faces visible.
-- NARRATIVE PURPOSE: Show the characters attempting to overcome the conflict, encountering initial obstacles. Tension should build.
-- VISUAL DETAILS: Characters should be in dynamic poses, reflecting their action or decision. Maintain consistent character designs.
+    Panel 5: FALLING ACTION - CONSEQUENCES
+    - Immediate results and aftermath of the climax. Characters process what just happened. Begin to understand the implications.
+    - Dialogue: Exactly two lines. One line reflecting on events, one line showing emotional processing or the immediate consequence. Show character growth or change from the experience.
+    - VISUAL FRAMING: **Medium shot** to show characters reacting to the aftermath. Can include elements of the destroyed or changed environment from the climax. Focus on their emotional state and the immediate results of the climax.
+    - NARRATIVE PURPOSE: Show the immediate fallout of the climax. Characters begin to understand the new reality. Do NOT fully resolve the story here.
+    - VISUAL DETAILS: Characters might appear weary, bruised, or showing relief/shock. The environment should reflect the recent conflict. Explicitly reference and describe all main characters using their established design. Describe the scene's color palette, lighting, and visual elements.
 
-Panel 4: CLIMAX - PEAK CONFLICT
-- The most intense, dramatic moment of the entire story. Highest emotional stakes and maximum tension.
-- Genre-specific peak action (e.g., a major confrontation or a powerful attack).
-- Dialogue: One line expressing intense emotions or a crucial decision, one line related to the core conflict's peak. Characters reveal their true nature under pressure.
-- VISUAL FRAMING: Close-up on the characters' faces to capture intense emotions, or a dynamic wide/medium shot highlighting the peak action. The focal point must be the most dramatic element. Show the impact of the climax.
-- NARRATIVE PURPOSE: This is the single most intense moment. All previous tension culminates here. Do NOT begin the resolution in this panel.
-- VISUAL DETAILS: Exaggerate expressions if appropriate for genre. Show environmental damage or dramatic effects caused by the climax.
+    CONCLUSION (Panel 6):
+    Panel 6: RESOLUTION & ENDING
+    - Story conclusion with a clear, satisfying outcome. Show how characters have been changed by the experience.
+    - Genre-appropriate ending (e.g., comedic resolution with a final joke, emotional resolution, adventure victory).
+    - Dialogue: Exactly two lines. One line for final reflection, one memorable closing line that ties back to the opening or theme. Leave the reader satisfied with the character journey.
+    - VISUAL FRAMING: **Wide shot** or **medium shot** showing the characters in their new, resolved state or environment. A sense of peace or finality should be conveyed.
+    - NARRATIVE PURPOSE: Provide a clear, satisfying conclusion to the main plot and character arcs. This is the final state of the story.
+    - VISUAL DETAILS: Characters should appear content or changed, and the environment should reflect the resolution. Explicitly reference and describe all main characters using their established design. Describe the scene's color palette, lighting, and visual elements.
 
-Panel 5: FALLING ACTION - CONSEQUENCES
-- Immediate results and aftermath of the climax. Characters process what just happened. Begin to understand the implications.
-- Dialogue: One line reflecting on events, one line showing emotional processing or the immediate consequence. Show character growth or change from the experience.
-- VISUAL FRAMING: Medium shot to show characters reacting to the aftermath. Can include elements of the destroyed or changed environment. Focus on their emotional state and the immediate results of the climax.
-- NARRATIVE PURPOSE: Show the immediate fallout of the climax. Characters begin to understand the new reality. Do NOT fully resolve the story here.
-- VISUAL DETAILS: Characters might be weary, bruised, or showing relief/shock. The environment should reflect the recent conflict.
+    CRITICAL DIALOGUE & CHARACTER REQUIREMENTS:
+    - Each character must have a CONSISTENT voice, personality, and speaking style throughout all 6 panels.
+    - Character names must be consistent across all panels.
+    - Dialogue must reflect each character's unique personality traits.
+    - The "{genre_lower}" genre MUST profoundly influence: dialogue tone, character reactions, emotional depth, and narrative progression.
+    - The art style "{art_style_lower}" MUST be identical across ALL panels. This includes a consistent color palette, lighting, line work, shading, and the EXACT character designs specified in the 'CHARACTER DESIGN GUIDE' above. NO DEVIATION IN ART STYLE OR CHARACTER APPEARANCE IS PERMITTED.
+    - Panel progression must show clear character development from introduction to conclusion.
 
-CONCLUSION (Panel 6):
-Panel 6: RESOLUTION & ENDING
-- Story conclusion with clear, satisfying outcome. Show how characters have been changed by the experience.
-- Genre-appropriate ending (e.g., comedic resolution with a final joke, emotional resolution, adventure victory).
-- Dialogue: One line for final reflection, one memorable closing line that ties back to the opening or theme. Leave reader satisfied with character journey.
-- VISUAL FRAMING: Wide shot or medium shot showing the characters in their new, resolved state or environment. A sense of peace or finality should be conveyed.
-- NARRATIVE PURPOSE: Provide a clear, satisfying conclusion to the main plot and character arcs. This is the final state of the story.
-- VISUAL DETAILS: Characters should appear content or changed, and the environment should reflect the resolution.
+    STRUCTURAL REQUIREMENTS (ABSOLUTELY CRITICAL):
+    - Your response MUST contain EXACTLY 6 frames in the frames array. Any deviation will result in failure.
+    - Each panel MUST have exactly 2 dialogue lines that are concise and directly advance the narrative. Do NOT add more or less dialogue.
+    - Dialogue should flow naturally between panels, clearly showing the evolution of character relationships and the plot.
+    - Characters must react authentically to events based on their established personalities and motivations.
+    - ENSURE that the narrative pacing perfectly matches the 6-panel breakdown: Panels 1-2 for Introduction, Panels 3-5 for Main Action, and Panel 6 for Conclusion.
 
-CRITICAL DIALOGUE & CHARACTER REQUIREMENTS:
-- Each character must have a CONSISTENT voice, personality, and speaking style throughout all 6 panels.
-- Character names must be consistent across all panels.
-- Dialogue must reflect each character's unique personality traits.
-- The "{genre_lower}" genre MUST profoundly influence: dialogue tone, character reactions, emotional depth, and narrative progression.
-- The art style "{art_style_lower}" MUST be identical across ALL panels. This includes a consistent color palette, lighting, line work, shading, and the EXACT character designs specified in the 'CHARACTER DESIGN GUIDE' above. NO DEVIATION IN ART STYLE OR CHARACTER APPEARANCE IS PERMITTED.
-- Panel progression must show clear character development from introduction to conclusion.
-
-STRUCTURAL REQUIREMENTS (ABSOLUTELY CRITICAL):
-- Your response MUST contain EXACTLY 6 frames in the frames array. Any deviation will result in failure.
-- Each panel MUST have exactly 2 dialogue lines that are concise and directly advance the narrative. Do NOT add more or less dialogue.
-- Dialogue should flow naturally between panels, clearly showing the evolution of character relationships and the plot.
-- Characters must react authentically to events based on their established personalities and motivations.
-- ENSURE that the narrative pacing perfectly matches the 6-panel breakdown: Panels 1-2 for Introduction, Panels 3-5 for Main Action, and Panel 6 for Conclusion.
-
-ABSOLUTE MANDATES FOR SCENARIO GENERATION:
-- ENSURE that the visual descriptions for each panel explicitly reference the established character designs to reinforce consistency.
-- EVERY panel description must include details about the specific 'VISUAL STYLE', 'COLOR PALETTE', and 'LIGHTING' from the creative guidance to ensure stylistic uniformity.
-- Avoid introducing new characters or significant changes to the environment unless explicitly part of the 6-panel structure.
-- The panel descriptions should be rich enough to directly inform an image generation model, focusing on clear visual elements, character poses, and expressions.
-- AVOID: Narrator boxes, internal thoughts (unless conveyed via facial expression/body language), or lengthy prose that doesn't translate directly into a comic panel's visual or dialogue. Focus on "show, don't tell" for the comic scenario.
-"""
+    ABSOLUTE MANDATES FOR SCENARIO GENERATION:
+    - ENSURE that the visual descriptions for each panel explicitly reference the established character designs to reinforce consistency.
+    - EVERY panel description must include details about the specific 'VISUAL STYLE', 'COLOR PALETTE', and 'LIGHTING' from the creative guidance to ensure stylistic uniformity.
+    - Avoid introducing new characters or significant changes to the environment unless explicitly part of the 6-panel structure.
+    - The panel descriptions should be rich enough to directly inform an image generation model, focusing on clear visual elements, character poses, and expressions.
+    - AVOID: Narrator boxes, internal thoughts (unless conveyed via facial expression/body language), or lengthy prose that doesn't translate directly into a comic panel's visual or dialogue. Focus on "show, don't tell" for the comic scenario.
+    """
 
     messages = [
         ("system", system_prompt),
@@ -567,48 +563,52 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
     async with aiohttp.ClientSession() as session:
         tasks = []
         for i, frame in enumerate(scenario.frames):
-            
             panel_number = i + 1
-            
-            style_variant = get_dynamic_style_variant(
-                art_style=scenario.art_style,
-                genre=scenario.genre,
-                panel_number=panel_number,
-                total_panels=len(scenario.frames)
-            )
-            
-            frame_width, frame_height = get_frame_dimensions(panel_number, len(scenario.frames))
-            
-            character_consistency = ""
-            if scenario.characters and len(scenario.characters) > 0:
-                char_names = ", ".join(scenario.characters[:2])
-                character_consistency = f"featuring {char_names} with consistent character design"
+            # Get genre/art style info
+            genre_lower = scenario.genre.lower() if scenario.genre else "action"
+            art_style_lower = scenario.art_style.lower() if scenario.art_style else "comic book"
+            genre_guide = GENRE_MAPPINGS.get(genre_lower, GENRE_MAPPINGS["action"])
+            art_style_guide = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["comic book"])
 
-            # Use scenario's actual genre, defaulting to 'action' if somehow missing
-            current_genre = scenario.genre.lower() if scenario.genre else "action"
+            # Camera shot and setting
+            camera_shot = getattr(frame, 'camera_shot', 'medium shot')
+            setting = ''
+            # Try to extract a setting from the frame description
+            if ' in ' in frame.description:
+                setting = frame.description.split(' in ', 1)[-1].split('.')[0]
+            if not setting:
+                setting = genre_guide.get('atmosphere', 'a typical setting')
 
+            # Characters in this panel
+            panel_characters = scenario.characters if scenario.characters else []
+            character_visuals = []
+            for char in panel_characters:
+                char_desc = extract_character_details(frame.description, char)
+                character_visuals.append(char_desc)
+            character_visuals_str = "; ".join(character_visuals) if character_visuals else "N/A"
+            characters_str = ", ".join(panel_characters) if panel_characters else "the main characters"
+
+            # Compose the detailed prompt
             image_prompt = (
-                f"{frame.description}, {style_variant}, {character_consistency}, "
-                f"{GENRE_MAPPINGS[current_genre]['atmosphere']} mood, "
-                f"{GENRE_MAPPINGS[current_genre]['lighting']}"
+                f"A {camera_shot} of {characters_str} in {setting}. "
+                f"Depicted in {art_style_lower} style: {art_style_guide}. "
+                f"Color palette: {genre_guide['palette']}. "
+                f"Lighting: {genre_guide['lighting']}. "
+                f"Visual cues: {genre_guide['visual_cues']}. "
+                f"Mood: {genre_guide['mood']}. "
+                f"Atmosphere: {genre_guide['atmosphere']}. "
+                f"Character details: {character_visuals_str}. "
+                f"Panel description: {frame.description}"
             )
-            
             if frame.sfx:
                 sfx_visual = ", ".join([f"visual representation of {sfx}" for sfx in frame.sfx])
-                image_prompt += f", with visual emphasis on: {sfx_visual}"
-                
+                image_prompt += f" SFX: {sfx_visual}."
             if character_lora_reference:
-                image_prompt += f", {character_lora_reference}"
-                
-            if panel_number <= 2: image_prompt += ", establishing scene, introduction mood"
-            elif panel_number <= 5: image_prompt += ", action scene, tension building"
-            else: image_prompt += ", resolution scene, conclusion mood"
-                
+                image_prompt += f" {character_lora_reference}."
+            # Remove redundant whitespace
             image_prompt = " ".join(image_prompt.split())
 
             base_negative = "text, letters, words, inconsistent art style, mixed styles, different character design, poor quality, blurry, style variations"
-            
-            # FIXED: Completed the genre_negative_map dictionary
             genre_negative_map = {
                 "horror": "bright cheerful colors, cartoon style, overly bright lighting",
                 "romance": "dark gothic elements, horror imagery, aggressive poses",
@@ -619,17 +619,16 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
                 "mystery": "bright cheerful colors, obvious solutions, cartoon comedy",
                 "drama": "exaggerated cartoon features, unrealistic proportions"
             }
-            genre_specific_negative = genre_negative_map.get(current_genre, "")
+            genre_specific_negative = genre_negative_map.get(genre_lower, "")
             negative_prompt = f"{base_negative}, {genre_specific_negative}" if genre_specific_negative else base_negative
-            
+
             print(f"  - Panel {panel_number}: Preparing task for '{frame.description[:30]}...'")
-            
             task = asyncio.create_task(
                 generate_image_from_prompt(
                     session=session,
                     prompt=image_prompt,
-                    width=frame_width,
-                    height=frame_height,
+                    width=get_frame_dimensions(panel_number, len(scenario.frames))[0],
+                    height=get_frame_dimensions(panel_number, len(scenario.frames))[1],
                     negative_prompt=negative_prompt,
                     seed=global_image_seed
                 )
@@ -869,4 +868,3 @@ def validate_genre_and_style(genre: str = None, art_style: str = None) -> tuple:
         art_style = "comic book"
     
     return genre, art_style
-

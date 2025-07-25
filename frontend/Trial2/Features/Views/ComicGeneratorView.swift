@@ -22,299 +22,308 @@ struct ComicGeneratorView: View {
     }
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.85, green: 0.73, blue: 0.94), // lavender
-                    Color(red: 0.99, green: 0.85, blue: 0.92)  // blush
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .edgesIgnoringSafeArea(.all)
-            NavigationView { // Needed for the top bar and navigation stack behavior
-                VStack(spacing: 0) { // Stack content and bottom bar
-                    ScrollView { // Make the content area scrollable
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Comic Title")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal)
+    ZStack {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 0.85, green: 0.73, blue: 0.94), // lavender
+                Color(red: 0.99, green: 0.85, blue: 0.92)  // blush
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .edgesIgnoringSafeArea(.all)
 
-                            // Comic Title Input Field
-                            TextField("Enter comic title", text: $viewModel.comicTitle)
-                                .padding()
-                                .background(Color.white.opacity(0.8))
-                                .cornerRadius(10)
-                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
-                                .padding(.horizontal)
-                            
-                            // World Selection Section
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Save to World")
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal)
-                                
-                                Button(action: {
-                                    showingWorldPicker = true
-                                }) {
-                                    HStack {
-                                        Circle()
-                                            .fill(worldColor(for: selectedWorld))
-                                            .frame(width: 30, height: 30)
-                                            .overlay(
-                                                Image(systemName: worldIcon(for: selectedWorld))
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.white)
-                                            )
-                                        
-                                        VStack(alignment: .leading) {
-                                            Text(selectedWorld.displayName)
-                                                .font(.body)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(.primary)
-                                            Text(selectedWorld.description)
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.down")
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.8))
-                                    .cornerRadius(10)
-                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
-                                }
-                                .padding(.horizontal)
-                            }
-
-                            // Genre Selection Section
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Genre")
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal)
-                                
-                                Menu {
-                                    ForEach(genres, id: \.self) { genre in
-                                        Button(genre.capitalized) {
-                                            viewModel.selectedGenre = genre
-                                            print("DEBUG: User selected genre: \(genre)")
-                                        }
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(viewModel.selectedGenre.capitalized)
-                                            .font(.body)
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        Image(systemName: "chevron.down")
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.8))
-                                    .cornerRadius(10)
-                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
-                                }
-                                .padding(.horizontal)
-                            }
-
-                            // Art Style Selection Section
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Art Style")
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal)
-                                
-                                Menu {
-                                    ForEach(artStyles, id: \.self) { style in
-                                        Button(style.capitalized) {
-                                            viewModel.selectedArtStyle = style
-                                            print("DEBUG: User selected art style: \(style)")
-                                        }
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(viewModel.selectedArtStyle.capitalized)
-                                            .font(.body)
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        Image(systemName: "chevron.down")
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.8))
-                                    .cornerRadius(10)
-                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
-                                }
-                                .padding(.horizontal)
-                            }
-
-                            // Detailed Scenario Toggle Section
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Advanced Options")
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal)
-                                
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "text.book.closed.fill")
-                                            .foregroundColor(.purple)
-                                            .font(.title3)
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Include Detailed Scenario")
-                                                .font(.body)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(.primary)
-                                            Text("Generate a rich, detailed story with character development and plot structure")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                                .multilineTextAlignment(.leading)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Toggle("", isOn: $viewModel.includeDetailedScenario)
-                                            .toggleStyle(SwitchToggleStyle(tint: .purple))
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.8))
-                                    .cornerRadius(10)
-                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
-                                }
-                                .padding(.horizontal)
-                            }
-
-                            // Large Script Text Input Area
-                            TextEditor(text: $viewModel.scriptText)
-                                .frame(minHeight: 200, maxHeight: .infinity) // Flexible height with a minimum
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.8))
-                                .cornerRadius(10)
-                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
-                                .padding(.horizontal)
-                                .overlay(
-                                    Group {
-                                        if viewModel.scriptText.isEmpty {
-                                            Text("Enter your script or story idea...")
-                                                .foregroundColor(Color.gray.opacity(0.6))
-                                                .padding(.horizontal, 20)
-                                                .padding(.vertical, 16)
-                                                .allowsHitTesting(false) // Allows tapping through to the TextEditor
-                                        }
-                                    }
-                                    , alignment: .topLeading
-                                )
-
-                            // Action Buttons as per screenshot
-                            VStack(spacing: 25) {
-                             
-                      
-                                ActionButton(
-                                    title: "Generate Comic",
-                                    iconName: "arrow.forward.circle.fill",
-                                    isPrimary: true,
-                                    isLoading: viewModel.isLoading,
-                                    isDisabled: viewModel.comicTitle.isEmpty // or other validation logic
-                                ) {
-                                    Task {
-                                        await viewModel.generateComicWithWorld(worldType: selectedWorld)
-                                    }
-                                }
-                            }
-                            .padding(.top, 30)
+        NavigationView {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Comic Title")
+                            .font(.headline)
+                            .foregroundColor(.black)
                             .padding(.horizontal)
 
-                            // Loading Indicator during AI generation
-                            if viewModel.isLoading {
-                                VStack(spacing: 16) {
-                                    Text("Generation may take some time, please wait...")
-                                        .padding()
-                                        .frame(maxWidth: .infinity)
+                        TextField("Enter comic title", text: $viewModel.comicTitle)
+                            .padding()
+                            .foregroundColor(.black)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            .padding(.horizontal)
 
-                                    if showLeavingInfo {
-                                        HStack(alignment: .top, spacing: 12) {
-                                            Image(systemName: "info.circle")
-                                                .foregroundColor(.blue)
+                        // World Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Save to World")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                                .padding(.horizontal)
 
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text("If you close the app or leave the screen.")
-                                                    .font(.headline)
+                            Button(action: {
+                                showingWorldPicker = true
+                            }) {
+                                HStack {
+                                    Circle()
+                                        .fill(worldColor(for: selectedWorld))
+                                        .frame(width: 30, height: 30)
+                                        .overlay(
+                                            Image(systemName: worldIcon(for: selectedWorld))
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.white)
+                                        )
 
-                                                Text("Just wait a while, your comics will be generated and saved")
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.secondary)
-                                            }
-
-                                            Spacer()
-
-                                            Button(action: {
-                                                withAnimation {
-                                                    showLeavingInfo = false
-                                                }
-                                            }) {
-                                                Image(systemName: "xmark.circle.fill")
-                                                    .foregroundColor(.gray)
-                                            }
-                                        }
-                                        .padding()
-                                        .background(Color(.systemGray6))
-                                        .cornerRadius(12)
-                                        .padding(.horizontal)
+                                    VStack(alignment: .leading) {
+                                        Text(selectedWorld.displayName)
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.black)
+                                        Text(selectedWorld.description)
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
                                     }
-                                }
-                            }
 
-                            // Long Loading UI for 504 Gateway Timeout
-                            if viewModel.isLongLoading {
-                                VStack(spacing: 16) {
-                                    ProgressView()
-                                    Text(viewModel.errorMessage ?? "")
-                                        .font(.headline)
-                                        .multilineTextAlignment(.center)
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundColor(.gray)
                                 }
                                 .padding()
-                                .frame(maxWidth: .infinity)
-                            } else if let errorMessage = viewModel.errorMessage {
-                                Text(errorMessage)
-                                    .foregroundColor(.green)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            }
+                            .padding(.horizontal)
+                        }
+
+                        // Genre Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Genre")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                                .padding(.horizontal)
+
+                            Menu {
+                                ForEach(genres, id: \.self) { genre in
+                                    Button(genre.capitalized) {
+                                        viewModel.selectedGenre = genre
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(viewModel.selectedGenre.capitalized)
+                                        .font(.body)
+                                        .foregroundColor(.black)
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            }
+                            .padding(.horizontal)
+                        }
+
+                        // Art Style Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Art Style")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                                .padding(.horizontal)
+
+                            Menu {
+                                ForEach(artStyles, id: \.self) { style in
+                                    Button(style.capitalized) {
+                                        viewModel.selectedArtStyle = style
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(viewModel.selectedArtStyle.capitalized)
+                                        .font(.body)
+                                        .foregroundColor(.black)
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            }
+                            .padding(.horizontal)
+                        }
+
+                        // Advanced Options
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Advanced Options")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                                .padding(.horizontal)
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "text.book.closed.fill")
+                                        .foregroundColor(.purple)
+                                        .font(.title3)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Include Detailed Scenario")
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.black)
+                                        Text("Generate a rich, detailed story with character development and plot structure")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.leading)
+                                    }
+
+                                    Spacer()
+                                    Toggle("", isOn: $viewModel.includeDetailedScenario)
+                                        .toggleStyle(SwitchToggleStyle(tint: .purple))
+                                }
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            }
+                            .padding(.horizontal)
+                        }
+
+                        // Script TextEditor
+                        ZStack(alignment: .topLeading) {
+                            TextEditor(text: $viewModel.scriptText)
+                                .frame(minHeight: 200)
+                                .padding(10)
+                                .foregroundColor(.black)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            if viewModel.scriptText.isEmpty {
+                                Text("Enter your script or story idea...")
+                                    .foregroundColor(.gray.opacity(0.6))
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 16)
                             }
                         }
-                        .padding(.vertical) // Vertical padding for content within ScrollView
-                        .frame(maxWidth: .infinity, minHeight: 600) // Fixed minimum height instead of UIScreen calculation
-                    }
-                 
-                    // Persistent Bottom Bar View
-                    BottombarView(navigation: navigation)
-                      // Fixed height for bottom bar
-                        
-                }
-                .background(Color(red: 0.87, green: 0.80, blue: 1.0))// muted purple
-                .sheet(isPresented: $showingWorldPicker) {
-                    WorldPickerView(selectedWorld: $selectedWorld)
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button(action: { navigation.currentScreen = .mainDashboard }) {
-                            Image(systemName: "chevron.left")
-                                .font(.title2)
-                                .foregroundColor(.primary)
+                        .padding(.horizontal)
+
+                        // Generate Button
+                        VStack(spacing: 25) {
+                            ActionButton(
+                                title: "Generate Comic",
+                                iconName: "arrow.forward.circle.fill",
+                                isPrimary: true,
+                                isLoading: viewModel.isLoading,
+                                isDisabled: viewModel.comicTitle.isEmpty
+                            ) {
+                                Task {
+                                    await viewModel.generateComicWithWorld(worldType: selectedWorld)
+                                }
+                            }
                         }
+                        .padding(.top, 30)
+                        .padding(.horizontal)
+
+                        if viewModel.isLoading {
+                            VStack(spacing: 16) {
+                                Text("Generation may take some time, please wait...")
+                                    .foregroundColor(.black)
+                                    .padding()
+
+                                if showLeavingInfo {
+                                    HStack(alignment: .top, spacing: 12) {
+                                        Image(systemName: "info.circle")
+                                            .foregroundColor(.blue)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("If you close the app or leave the screen.")
+                                                .font(.headline)
+                                                .foregroundColor(.black)
+                                            Text("Just wait a while, your comics will be generated and saved")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                        Spacer()
+                                        Button(action: {
+                                            withAnimation {
+                                                showLeavingInfo = false
+                                            }
+                                        }) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(12)
+                                    .padding(.horizontal)
+                                }
+                            }
+                        }
+
+                        if viewModel.isLongLoading {
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                Text(viewModel.errorMessage ?? "")
+                                    .font(.headline)
+                                    .foregroundColor(.black)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .padding()
+                        } else if let errorMessage = viewModel.errorMessage {
+                            Text(errorMessage)
+                                .foregroundColor(.green)
+                                .padding()
+                        }
+                    }
+                    .padding(.vertical)
+                    .frame(maxWidth: .infinity, minHeight: 600)
+                    // Disable all form fields when loading
+                    .disabled(viewModel.isLoading)
+                }
+
+                BottombarView(navigation: navigation)
+                    .ignoresSafeArea(.keyboard, edges: .bottom)
+                    .disabled(viewModel.isLoading)
+            }
+            .background(Color(red: 0.87, green: 0.80, blue: 1.0)) // muted purple
+            .sheet(isPresented: $showingWorldPicker) {
+                WorldPickerView(selectedWorld: $selectedWorld)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        navigation.currentScreen = .mainDashboard
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.black)
                     }
                 }
             }
+            // Disable navigation bar button when loading
+            .disabled(viewModel.isLoading)
+        }
+        // Overlay a blocking view when loading
+        if viewModel.isLoading {
+            Color.black.opacity(0.25)
+                .ignoresSafeArea()
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                Text("Generating your comic...\nThis may take some time, please wait.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.white)
+                    .font(.headline)
+            }
+            .padding(32)
+            .background(Color.black.opacity(0.7))
+            .cornerRadius(20)
+            .shadow(radius: 10)
         }
     }
+    .colorScheme(.light) // 👈 Force light mode for all content
+}
+
     
     // Helper functions for world UI
     private func worldColor(for world: WorldType) -> Color {
