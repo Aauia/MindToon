@@ -556,6 +556,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
     
     print("🎨 Preparing all panel image generation tasks...")
     panels_with_images = []
+    full_image_prompts = []
 
     global_image_seed = random.randint(1, 2**32 - 1)
     print(f"Seed for image generation (global): {global_image_seed}")
@@ -600,6 +601,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
                 f"Character details: {character_visuals_str}. "
                 f"Panel description: {frame.description}"
             )
+            full_image_prompts.append(image_prompt) 
             if frame.sfx:
                 sfx_visual = ", ".join([f"visual representation of {sfx}" for sfx in frame.sfx])
                 image_prompt += f" SFX: {sfx_visual}."
@@ -667,7 +669,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
         comic_page_panels.append(
             ComicPanelWithImageSchema(
                 panel=i+1,
-                image_prompt=f"Panel {i+1} ({frame.camera_shot}): {frame.description[:50]}...",
+                image_prompt=trim_prompt(full_image_prompts[i]),
                 image_url="",
                 dialogue="; ".join([f"{d.speaker}: {d.text}" for d in frame.dialogues]),
                 x_coord=panel_location_data.get("x", 0),
@@ -741,8 +743,20 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
 
     return comic_page, comic_sheet, detailed_scenario
 
+def trim_prompt(prompt: str, max_len: int = 2000) -> str:
+    if len(prompt) <= max_len:
+        return prompt
+    # Try to remove long narrative suffix
+    parts = prompt.split(". ")
+    trimmed = []
+    total = 0
+    for p in parts:
+        if total + len(p) + 2 > max_len:
+            break
+        trimmed.append(p)
+        total += len(p) + 2
+    return ". ".join(trimmed)[:max_len]
 
-    return comic_page, comic_sheet, detailed_scenario
 
 def create_simple_comic_grid(images):
     """Create a simple comic grid layout as fallback when comic sheet creation fails"""

@@ -149,7 +149,7 @@ class ComicTextRenderer:
             return style.font_size
         
         # Start with the base font size and work down if needed
-        max_font_size = min(style.font_size, 72)  # Cap at reasonable maximum
+        max_font_size = min(style.font_size, 20)  # Cap at reasonable maximum
         min_font_size = max(16, style.font_size // 3)  # Minimum readable size
         
         available_width = bubble_width - 2 * style.padding
@@ -399,7 +399,7 @@ class ComicTextRenderer:
         self.draw_bubble_shape(draw, bubble_coords, bubble.bubble_type, style, bubble.speaker_position)
         
         # Draw text
-        self._render_text_in_bubble(draw, bubble.text, bubble_coords, style)
+        self._render_text_in_bubble(draw, bubble.text, bubble_coords, style, panel, panel_number)
         
         # Composite with panel
         if panel.mode != 'RGBA':
@@ -409,7 +409,7 @@ class ComicTextRenderer:
         return result.convert('RGB')
     
     def render_text_bubble_at_position(self, panel: Image.Image, bubble: TextBubble, 
-                                     forced_x: int, forced_y: int, panel_width: int, panel_height: int) -> Image.Image:
+                                     forced_x: int, forced_y: int, panel_width: int, panel_height: int, panel_number: int = None) -> Image.Image:
         """Render a text bubble at EXACTLY the specified coordinates (no automatic positioning)"""
         if not bubble.text.strip():
             return panel
@@ -442,7 +442,7 @@ class ComicTextRenderer:
         self.draw_bubble_shape(draw, bubble_coords, bubble.bubble_type, style, bubble.speaker_position)
         
         # Draw text
-        self._render_text_in_bubble(draw, bubble.text, bubble_coords, style)
+        self._render_text_in_bubble(draw, bubble.text, bubble_coords, style, panel, panel_number)
         
         # Composite with panel
         if panel.mode != 'RGBA':
@@ -453,7 +453,7 @@ class ComicTextRenderer:
         return result.convert('RGB')
     
     def _render_text_in_bubble(self, draw: ImageDraw.Draw, text: str, 
-                              coords: Tuple[int, int, int, int], style: ComicTextStyle):
+                              coords: Tuple[int, int, int, int], style: ComicTextStyle, panel: Image.Image = None, panel_number: int = None):
         """Render wrapped text inside bubble with bounds checking to prevent overflow"""
         x1, y1, x2, y2 = coords
         try:
@@ -463,8 +463,22 @@ class ComicTextRenderer:
             print(f"🔍 DEBUG: Text to render: '{text[:50]}...'")
             
             # Use the style's font size directly
-            font = get_system_font("default", style.font_size)
-            print(f"🔍 DEBUG: Using font size: {style.font_size}")
+            # Adjust font size based on panel number if available
+            font_size = style.font_size
+            panel_num = panel_number if panel_number is not None else (getattr(panel, 'panel_number', 'unknown') if panel else 'no_panel')
+            print(f"🔍 DEBUG: Panel number detected: {panel_num}")
+            print(f"🔍 DEBUG: Panel object type: {type(panel)}")
+            print(f"🔍 DEBUG: Panel has panel_number: {hasattr(panel, 'panel_number') if panel else 'N/A'}")
+            
+            if panel_number == 1 or (panel and hasattr(panel, 'panel_number') and panel.panel_number == 1):
+                font_size = 14  # Larger font for first panel
+                print(f"🔍 DEBUG: Using LARGE font size 17 for panel 1")
+            else:
+                font_size = 10  # Smaller font for other panels
+                print(f"🔍 DEBUG: Using SMALL font size 10 for panel {panel_num}")
+            
+            font = get_system_font("default", font_size)
+            print(f"🔍 DEBUG: Using font size: {font_size}")
             
             # Calculate available text area with padding
             max_text_width = bubble_width - 2 * style.padding

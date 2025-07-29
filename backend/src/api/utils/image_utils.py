@@ -24,13 +24,14 @@ WHISPER_FONT_SIZE = 28 # Smaller for whispers
 EXCITED_FONT_SIZE = 40 # Medium excited text
 
 try:
-    SPEECH_FONT = get_system_font("comic_speech", SPEECH_FONT_SIZE)
-    THOUGHT_FONT = get_system_font("thought", THOUGHT_FONT_SIZE)
-    SFX_FONT = get_system_font("impact", SFX_FONT_SIZE)
-    NARRATION_FONT = get_system_font("narration", NARRATION_FONT_SIZE)
-    SCREAM_FONT = get_system_font("comic_bold", SCREAM_FONT_SIZE)
-    WHISPER_FONT = get_system_font("thought", WHISPER_FONT_SIZE) # Using thought font for whisper
-    EXCITED_FONT = get_system_font("comic_bold", EXCITED_FONT_SIZE)
+    # Use Ubuntu fonts for all text types to ensure Cyrillic support
+    SPEECH_FONT = get_system_font("default", SPEECH_FONT_SIZE)
+    THOUGHT_FONT = get_system_font("default", THOUGHT_FONT_SIZE)
+    SFX_FONT = get_system_font("default", SFX_FONT_SIZE)
+    NARRATION_FONT = get_system_font("default", NARRATION_FONT_SIZE)
+    SCREAM_FONT = get_system_font("default", SCREAM_FONT_SIZE)
+    WHISPER_FONT = get_system_font("default", WHISPER_FONT_SIZE)
+    EXCITED_FONT = get_system_font("default", EXCITED_FONT_SIZE)
 except Exception as e:
     print(f"CRITICAL: Font loading error: {e}. All fonts defaulting.")
     # If all else fails, ensure *some* font is loaded
@@ -70,7 +71,7 @@ def calculate_dynamic_font_size(draw: ImageDraw.Draw, text: str, max_width: int,
 
     # Decrease font size if text is too large
     for size in range(current_size, min_font_size - 1, -2):
-        temp_font = get_system_font(font_family_name, size)
+        temp_font = get_system_font("default", size)
         wrapped_text = wrap_text_pil(draw, text, temp_font, max_width)
         
         # Calculate actual height needed for wrapped text
@@ -92,7 +93,8 @@ def add_dialogues_and_sfx_to_panel(
     dialogues: List[Dialogue],
     panel_width: int,
     panel_height: int,
-    character_names: List[str] = None
+    character_names: List[str] = None,
+    panel_number: int = None
 ) -> Image.Image:
     """
     Adds a single wide speech bubble at the bottom center of the panel, combining all dialogue lines.
@@ -101,6 +103,11 @@ def add_dialogues_and_sfx_to_panel(
  
     if not dialogues:
         return panel_image
+
+    # Set panel number attribute for font sizing logic
+    if panel_number is not None:
+        panel_image.panel_number = panel_number
+        print(f"🔍 DEBUG: Set panel_number = {panel_number} on panel_image in add_dialogues_and_sfx_to_panel")
 
     # Combine all dialogue lines, preserving speaker names
     combined_lines = []
@@ -116,20 +123,21 @@ def add_dialogues_and_sfx_to_panel(
 
     # Use a wide, compact bubble style
     bubble_style = renderer.default_styles["speech"]
-    # Make font size dynamic and readable
-    bubble_style.font_size = max(18, int(panel_height * 0.06))  # Dynamic, readable font size
+    # Set font size: 13 for first panel, 10 for others
+  
     bubble_style.padding = max(5, int(panel_height * 0.03))
     bubble_style.corner_radius = 0
 
     # Calculate bubble size for the combined text
-    max_bubble_width = int(panel_width * 0.80)  # Reduced from 85% to 60% for narrower bubbles
-    max_bubble_height = int(panel_height * 0.15)  # Increased from 15% to 35% for more text
+    max_bubble_width = int(panel_width * 0.80)
     bubble_width, bubble_height = renderer.calculate_bubble_size(combined_text, bubble_style, max_bubble_width)
     bubble_width = min(bubble_width, max_bubble_width)
-    bubble_height = min(bubble_height, max_bubble_height)
+    # Cap bubble height at 25% of panel height
+    if bubble_height > int(panel_height * 0.25):
+        bubble_height = int(panel_height * 0.25)
     
     print(f"🔍 DEBUG: Panel size: {panel_width}x{panel_height}")
-    print(f"🔍 DEBUG: Max bubble size: {max_bubble_width}x{max_bubble_height}")
+    print(f"🔍 DEBUG: Max bubble width: {max_bubble_width}")
     print(f"🔍 DEBUG: Calculated bubble size: {bubble_width}x{bubble_height}")
     print(f"🔍 DEBUG: Combined text: '{combined_text[:50]}...'")
 
@@ -160,7 +168,7 @@ def add_dialogues_and_sfx_to_panel(
     bubble._calculated_size = (bubble_width, bubble_height)
 
     # Render the single bubble at the specified position and size
-    result = renderer.render_text_bubble_at_position(result, bubble, bubble_x, bubble_y, panel_width, panel_height)
+    result = renderer.render_text_bubble_at_position(result, bubble, bubble_x, bubble_y, panel_width, panel_height, panel_number)
     return result
 
 
@@ -347,7 +355,7 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
             
             # Then add bubbles to the resized panel
             processed_img = add_dialogues_and_sfx_to_panel(
-                resized_panel, dialogues, panel_w, panel_h, character_names
+                resized_panel, dialogues, panel_w, panel_h, character_names, idx + 1
             )
             
             comic_sheet.paste(processed_img, (x, y))
@@ -388,7 +396,7 @@ def create_comic_sheet(panels_with_images: List[Tuple[Image.Image, List[Dialogue
             y = outer_margin + row * (calculated_panel_height + gutter) + gutter
 
             processed_img = add_dialogues_and_sfx_to_panel(
-                panel_img, dialogues, calculated_panel_width, calculated_panel_height, character_names
+                panel_img, dialogues, calculated_panel_width, calculated_panel_height, character_names, idx + 1
             )
 
             resized_img = processed_img.resize((calculated_panel_width, calculated_panel_height), Image.Resampling.LANCZOS)

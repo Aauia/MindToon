@@ -19,6 +19,7 @@ import asyncio
 from sqlalchemy.future import select
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession # Use AsyncSess
+from api.supabase.client import supabase_client
 router = APIRouter()
 
 # Request/Response models
@@ -429,7 +430,7 @@ async def delete_comic(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Delete a comic"""
+    """Delete a comic and its image from Supabase Storage if present"""
     try:
         comic = session.get(ComicsPage, comic_id)
         
@@ -438,6 +439,17 @@ async def delete_comic(
         
         if comic.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Delete comic image from Supabase Storage if it exists
+        if comic.image_url and supabase_client:
+            try:
+                image_deleted = supabase_client.delete_comic_image(comic.image_url)
+                if image_deleted:
+                    print(f"✅ Comic image deleted from Supabase Storage: {comic.image_url}")
+                else:
+                    print(f"⚠️ Failed to delete comic image from Supabase Storage: {comic.image_url}")
+            except Exception as e:
+                print(f"⚠️ Exception during Supabase image deletion: {e}")
         
         session.delete(comic)
         session.commit()

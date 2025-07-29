@@ -2,11 +2,14 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import List, Tuple
 import platform
 import os
-
 def get_system_font(font_name: str, size: int, fallback_font_name: str = "arial", fallback_size: int = 20):
-    """Get system font - simplified to use only default font"""
-    # Use only the default system font - no complex mappings
-    return ImageFont.load_default()
+    """Always load Ubuntu font for all text, supports Russian/Cyrillic."""
+    font_path = os.path.join(os.path.dirname(__file__), "fonts", "Ubuntu-Regular.ttf")
+    try:
+        return ImageFont.truetype(font_path, size)
+    except Exception as e:
+        print(f"Font load failed: {e}, falling back to default.")
+        return ImageFont.load_default()
 
 def wrap_text_pil(draw: ImageDraw.Draw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> List[str]:
     """Wrap text using PIL's textlength method"""
