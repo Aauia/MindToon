@@ -11,7 +11,7 @@ from api.ai.schemas import (
 from api.utils.image_utils import create_comic_sheet, add_dialogues_and_sfx_to_panel, extract_character_details
 from dotenv import load_dotenv
 import asyncio
-import aiohttp 
+import aiohttp
 import random
 
 load_dotenv()
@@ -105,29 +105,29 @@ GENRE_MAPPINGS = {
 # 🎨 Art Style System
 CONSISTENT_STYLES = {
     "cartoon": "Vibrant, expressive cartoon illustration. Features bold, clean outlines, simplified forms, and bright, flat colors with minimal shading. Characters have exaggerated features and dynamic poses. The style should evoke a modern animated series or a stylized graphic novel, distinct from classic Disney or traditional cel animation. Focus on clear visual storytelling and energetic composition.",
-    
+
     "comic book": "Classic American comic book art style. Characterized by strong, impactful linework, dynamic action poses, and a vibrant, high-contrast color palette often with distinct black inks. Panels are designed for dramatic effect, with clear visual hierarchy and a focus on impactful storytelling typical of superhero or adventure comics. Features clear muscle definition, detailed expressions, and a bold, iconic aesthetic.",
-    
+
     "manga": "Authentic Japanese manga illustration style. Defined by precise, sharp linework, a predominant use of black and white tones with occasional selective spot colors (often muted). Characters feature large, expressive eyes, nuanced facial expressions, and dynamic motion effects. Backgrounds can range from highly detailed to abstract, utilizing screentones for shading and texture. Emphasizes character emotion and narrative flow.",
-    
+
     "anime": "Modern Japanese anime visual style. Characterized by vibrant, often saturated colors, detailed character designs with large expressive eyes, and dynamic compositions. Shading is typically cel-shaded (flat blocks of color for shadows and highlights). The aesthetic is clean, polished, and suitable for action or emotional drama, resembling high-quality animated series or feature films.",
-    
+
     "realistic": "Photorealistic digital painting style. Focuses on highly detailed rendering, accurate anatomy, naturalistic lighting with subtle shadows and highlights, and lifelike textures. Proportions are realistic, and the overall impression is one of cinematic realism or a finely detailed classical painting, executed digitally. High fidelity to real-world appearance.",
-    
+
     "watercolor": "Evocative watercolor painting style. Features soft, translucent washes of color with visible brushstrokes and a delicate, often ethereal quality. Outlines are minimal or entirely absent, allowing colors to blend naturally. The paper texture may be subtle. The mood is often calm, artistic, and flowing, reminiscent of traditional art mediums.",
-    
+
     "sketch": "Expressive pencil sketch or charcoal drawing style. Characterized by visible, energetic hand-drawn lines, cross-hatching or subtle smudged shading for depth. The artwork feels raw and immediate, showcasing the artist's hand. Typically black and white or sepia-toned, with a focus on form and texture over detailed color.",
-    
+
     "pixel art": "Distinctive pixel art style. Employs a low-resolution aesthetic with clearly visible square pixels, reminiscent of classic 8-bit or 16-bit video game graphics. Features blocky, stylized sprites, a limited color palette, and often strong, simple outlines. Can include isometric or side-scrolling perspectives. The charm lies in its retro, digital blocky aesthetic.",
-    
+
     "minimalist": "Clean and sleek minimalist art style. Characterized by simple, geometric shapes, a very limited and often muted color palette, and abundant use of negative space. Focuses on conveying essence with few elements, resulting in a modern, abstract, and often serene aesthetic. Emphasizes clarity, functionality, and simplicity over detail.",
-    
+
     "vintage": "Nostalgic vintage illustration style. Evokes a retro aesthetic, often inspired by mid-20th century advertising or children's book illustrations. Features muted or sepia-toned color palettes, subtle grain or aged paper textures, and stylized figures. The linework can vary but generally aims for a charming, classic, and slightly distressed look.",
 
     "noir": "Gritty, high-contrast film noir style. Dominated by deep shadows, dramatic chiaroscuro lighting, and a predominantly monochrome (black, white, grays) or desaturated color palette with occasional splashes of bold color. Focuses on mystery, tension, and dramatic silhouettes, reflecting classic detective comics or films.",
-    
+
     "storybook": "Whimsical and warm storybook illustration style. Features soft, inviting colors, gentle outlines (or painterly edges), and a focus on charming character designs. The style often has a slightly textured or painterly feel, suitable for children's literature, evoking a cozy and imaginative atmosphere.",
-    
+
     "pop art": "Bold and graphic Pop Art style. Inspired by comic books and advertising, it uses strong outlines, bright, often unmixed colors, and sometimes incorporates halftone dot patterns or speech bubbles. Focuses on iconic imagery and everyday objects, with a flat, graphic, and energetic feel."
 }
 
@@ -302,7 +302,7 @@ def generate_comic_scenario(prompt: str, genre: str = None, art_style: str = Non
     ]
 
     result = llm.invoke(messages)
-    
+
     # CRITICAL DEBUG: Check how many panels were actually generated
     panel_count = len(result.frames) if result.frames else 0
     print(f"🎬 SCENARIO DEBUG: Generated {panel_count} frames (REQUIRED: 6)")
@@ -312,7 +312,7 @@ def generate_comic_scenario(prompt: str, genre: str = None, art_style: str = Non
         print(f"📝 Generated panels: {[f'Panel {frame.panel_number}: {frame.description[:50]}...' for frame in result.frames if hasattr(frame, 'description')]}")
     else:
         print(f"✅ SUCCESS: Exactly 6 panels generated as required")
-    
+
     print(f"✅ Comic: {result.title}")
     print(f"📖 Narrative structure: Setup (1-2) → Action (3-5) → Resolution (6)")
     return result
@@ -323,7 +323,7 @@ async def generate_image_from_prompt(session: aiohttp.ClientSession, prompt: str
     try:
         # 8 spaces for the second level of indentation
         print(f"🚀 Launching async image request for: {prompt[:50]}...")
-        
+
         if not STABILITY_API_KEY:
             raise Exception("STABILITY_API_KEY not configured")
 
@@ -352,7 +352,7 @@ async def generate_image_from_prompt(session: aiohttp.ClientSession, prompt: str
                 error_text = await response.text()
                 print(f"❌ Stability AI async request failed with status {response.status}: {error_text}")
                 raise Exception(f"Stability AI request failed: {response.status}")
-            
+
             data = await response.json()
             if 'artifacts' not in data or len(data['artifacts']) == 0:
                 raise Exception("No image generated in response")
@@ -360,17 +360,17 @@ async def generate_image_from_prompt(session: aiohttp.ClientSession, prompt: str
             image_base64 = data['artifacts'][0]['base64']
             image_bytes = base64.b64decode(image_base64)
             image = Image.open(BytesIO(image_bytes))
-            
+
             print(f"✅ Async image received for: {prompt[:50]}...")
             return image
-            
+
 # 4 spaces for the 'except' block, aligning it with 'try'
     except Exception as e:
         # 8 spaces for the code inside the 'except' block
         print(f"❌ Async image generation failed for '{prompt[:50]}...': {e}")
         placeholder = Image.new('RGB', (width, height), color='lightgray')
         return placeholder
-        
+
     except Exception as e:
         print(f"❌ Async image generation failed for '{prompt[:50]}...': {e}")
         # Return a placeholder image with frame-specific dimensions
@@ -392,50 +392,50 @@ def generate_character_reference(character_name: str, character_description: str
 
 def get_dynamic_style_variant(art_style: str, genre: str, panel_number: int, total_panels: int) -> str:
     """Generate comprehensive style guidance based on genre mood system and art style"""
-    
+
     # Get genre-specific style elements
     genre_lower = genre.lower() if genre else "action"
     art_style_lower = art_style.lower() if art_style else "comic book"
-    
+
     # Get genre mappings
     genre_style = GENRE_MAPPINGS.get(genre_lower, GENRE_MAPPINGS["action"])
     art_style_desc = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["comic book"])
-    
+
     # Build comprehensive style prompt based on panel position in narrative
     style_elements = []
-    
+
     # Core art style foundation
     style_elements.append(art_style_desc)
-    
+
     # Genre-specific mood and atmosphere
     style_elements.append(f"with {genre_style['mood']} mood")
     style_elements.append(f"{genre_style['atmosphere']} atmosphere")
-    
+
     # Genre-specific color palette
     style_elements.append(f"color palette: {genre_style['palette']}")
-    
+
     # Genre-specific lighting
     style_elements.append(f"lighting: {genre_style['lighting']}")
-    
+
     # Genre-specific visual cues
     style_elements.append(f"visual elements: {genre_style['visual_cues']}")
-    
+
     # Panel-specific mood enhancement based on narrative position
     if panel_number <= 2:
         # Introduction panels - establish mood
         style_elements.append("establishing tone, character introduction, world-building elements")
     elif panel_number <= 4:
-        # Action/climax panels - intensify mood  
+        # Action/climax panels - intensify mood
         style_elements.append("intensified dramatic tension, heightened emotional stakes")
     else:
         # Resolution panels - conclude mood
         style_elements.append("resolution mood, emotional conclusion, satisfying closure")
-    
+
     # Combine all elements into a cohesive style description
     complete_style = ", ".join(style_elements)
-    
+
     print(f"🎨 Panel {panel_number} Style: {art_style} + {genre} → {genre_style['mood']} mood")
-    
+
     return complete_style
 
 def map_to_allowed_sdxl_dimensions(width: int, height: int) -> tuple:
@@ -444,7 +444,7 @@ def map_to_allowed_sdxl_dimensions(width: int, height: int) -> tuple:
     allowed_dimensions = [
         (1024, 1024),  # Square
         (1152, 896),   # Landscape
-        (1216, 832),   # Landscape  
+        (1216, 832),   # Landscape
         (1344, 768),   # Landscape
         (1536, 640),   # Wide landscape
         (640, 1536),   # Portrait
@@ -452,38 +452,38 @@ def map_to_allowed_sdxl_dimensions(width: int, height: int) -> tuple:
         (832, 1216),   # Portrait
         (896, 1152),   # Portrait
     ]
-    
+
     # Calculate aspect ratio of input
     input_ratio = width / height
-    
+
     # Find the closest matching dimension pair based on aspect ratio and total area
     best_match = (1024, 1024)
     best_score = float('inf')
-    
+
     for allowed_w, allowed_h in allowed_dimensions:
         allowed_ratio = allowed_w / allowed_h
-        
+
         # Score based on aspect ratio difference and area difference
         ratio_diff = abs(input_ratio - allowed_ratio)
         area_diff = abs((width * height) - (allowed_w * allowed_h)) / (width * height)
-        
+
         # Combined score (prioritize aspect ratio)
         score = ratio_diff * 2 + area_diff
-        
+
         if score < best_score:
             best_score = score
             best_match = (allowed_w, allowed_h)
-    
-    print(f"📏 Mapped {width}x{height} (ratio: {input_ratio:.2f}) → {best_match[0]}x{best_match[1]} (ratio: {best_match[0]/best_match[1]:.2f})")
+
+    print(f"📏 Mapped {width}x{height} (ratio: {input_ratio:.2f}) → {best_match[0]}x{best_match[1]} (ratio: {best_match[0]/best_ratio[1]:.2f})")
     return best_match
 
 def get_frame_dimensions(panel_number: int, total_panels: int = 6) -> tuple:
     """Calculate frame dimensions for a specific panel in the comic layout"""
-    
+
     if total_panels == 6:
         # NEW NARRATIVE-FOCUSED 6-panel layout with specific SDXL dimensions
         panel_dimensions = {
-            1: (768, 1344),     # Strong vertical intro
+            1: (1344, 768),     # Wide shot for intro/establishing
             2: (1344, 768),     # Establishing shot or zoom
             3: (1344, 768),     # Reveal / climax (updated for better aspect ratio)
             4: (1344, 768),     # Aftermath (updated for better aspect ratio)
@@ -491,9 +491,9 @@ def get_frame_dimensions(panel_number: int, total_panels: int = 6) -> tuple:
             6: (1024, 1024),    # Closing beat
         }
 
-                
+
         return panel_dimensions.get(panel_number, (1024, 1024))
-    
+
     else:
         # Fallback for other panel counts - MAPPED TO ALLOWED SDXL DIMENSIONS
         cols = 2 if total_panels <= 4 else 3
@@ -502,44 +502,45 @@ def get_frame_dimensions(panel_number: int, total_panels: int = 6) -> tuple:
         outer_margin = 35
         calculated_panel_width = (sheet_target_width - (cols + 1) * gutter - 2 * outer_margin) // cols
         calculated_panel_height = int(calculated_panel_width * 0.75)  # 4:3 aspect ratio
-        
+
         return map_to_allowed_sdxl_dimensions(calculated_panel_width, calculated_panel_height)
 
 async def generate_complete_comic(concept: str, genre: str = None, art_style: str = None, include_detailed_scenario: bool = False) -> tuple:
     """
     Asynchronously generates a complete comic from concept to final page.
     """
-    
+
     # --------------------------------------------------------------------------
     #                       INITIAL SETUP AND SCENARIO
     # This part of your code was correct and remains the same.
     # --------------------------------------------------------------------------
-    
+
     # Validate and normalize genre and art style
     validated_genre, validated_art_style = validate_genre_and_style(genre, art_style)
-    
+
     # SHOW USER REQUIREMENTS CLEARLY
     print("🎯 COMIC GENERATION REQUEST (ASYNC):")
     print(f"   📝 Concept: {concept}")
     print(f"   🎭 Genre: {validated_genre}")
     print(f"   🎨 Art Style: {validated_art_style}")
-    
+
     combo_info = get_genre_art_style_combination(validated_genre, validated_art_style)
     print(f"   🎨 Style Combination: {combo_info['genre_details']['mood']} mood...")
-    
+
     # Step 1: Generate story scenario
     print("🎬 Generating FRAME-SIZE-AWARE 6-panel story scenario...")
     scenario = generate_comic_scenario(concept, validated_genre, validated_art_style)
-    
+
     print("✅ SCENARIO VERIFICATION:")
     print(f"   🎭 Generated Genre: {scenario.genre}")
     print(f"   🎨 Generated Art Style: {scenario.art_style}")
-    
+
     # Step 2: Create character LoRA reference
     print("🎭 Creating character LoRA reference...")
     character_lora_reference = None
     if scenario.characters and len(scenario.characters) > 0:
         main_character_name = scenario.characters[0]
+        # Ensure scenario.frames is not empty before accessing its first element
         first_frame_desc = scenario.frames[0].description if scenario.frames else ""
         character_details = extract_character_details(first_frame_desc, main_character_name)
         character_lora_reference = generate_character_reference(
@@ -553,10 +554,10 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
     # The following block is now correctly indented to be part of the function
     # and has the complete logic.
     # --------------------------------------------------------------------------
-    
+
     print("🎨 Preparing all panel image generation tasks...")
     panels_with_images = []
-    full_image_prompts = []
+    full_image_prompts = [] # This list will now be populated
 
     global_image_seed = random.randint(1, 2**32 - 1)
     print(f"Seed for image generation (global): {global_image_seed}")
@@ -589,26 +590,31 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
             character_visuals_str = "; ".join(character_visuals) if character_visuals else "N/A"
             characters_str = ", ".join(panel_characters) if panel_characters else "the main characters"
 
-            # Compose the detailed prompt
+            # Compose the detailed prompt - MODIFIED HERE FOR PRIORITIZATION
             image_prompt = (
-                f"A {camera_shot} of {characters_str} in {setting}. "
+                f"{character_visuals_str}. {frame.description}. " # Core subject and action first
+                f"A {camera_shot} of {characters_str} in {setting}. " # Framing and setting
                 f"Depicted in {art_style_lower} style: {art_style_guide}. "
                 f"Color palette: {genre_guide['palette']}. "
                 f"Lighting: {genre_guide['lighting']}. "
                 f"Visual cues: {genre_guide['visual_cues']}. "
                 f"Mood: {genre_guide['mood']}. "
-                f"Atmosphere: {genre_guide['atmosphere']}. "
-                f"Character details: {character_visuals_str}. "
-                f"Panel description: {frame.description}"
+                f"Atmosphere: {genre_guide['atmosphere']}."
             )
-            full_image_prompts.append(image_prompt) 
             if frame.sfx:
                 sfx_visual = ", ".join([f"visual representation of {sfx}" for sfx in frame.sfx])
                 image_prompt += f" SFX: {sfx_visual}."
             if character_lora_reference:
-                image_prompt += f" {character_lora_reference}."
+                # Prepend character_lora_reference for stronger influence
+                image_prompt = f"{character_lora_reference}. " + image_prompt
             # Remove redundant whitespace
             image_prompt = " ".join(image_prompt.split())
+            # Ensure prompt is trimmed to max length
+            image_prompt = trim_prompt(image_prompt)
+
+            # ADDED: Populate full_image_prompts
+            full_image_prompts.append(image_prompt)
+
 
             base_negative = "text, letters, words, inconsistent art style, mixed styles, different character design, poor quality, blurry, style variations"
             genre_negative_map = {
@@ -636,7 +642,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
                 )
             )
             tasks.append(task)
-            
+
         print("\n⏳ Concurrently executing all tasks. Waiting for completion...")
         generated_images = await asyncio.gather(*tasks)
         print("\n✅ All images have been successfully generated!")
@@ -654,7 +660,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
     print("📄 Assembling final comic pages...")
     try:
         comic_sheet, final_panel_locations = create_comic_sheet(
-            panels_with_images, 
+            panels_with_images,
             character_names=scenario.characters
         )
         print("✅ Comic sheet assembled successfully.")
@@ -694,7 +700,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
             comic_content = f"Comic Title: {scenario.title}\n"
             comic_content += f"Genre: {scenario.genre}, Art Style: {scenario.art_style}\n"
             comic_content += f"Characters: {', '.join(scenario.characters) if scenario.characters else 'Unknown'}\n\n"
-            
+
             # Include the actual comic panel descriptions for richer narrative
             for i, frame in enumerate(scenario.frames):
                 comic_content += f"Panel {i+1}: {frame.description}\n"
@@ -702,7 +708,7 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
                     for dialogue in frame.dialogues:
                         speaker_text = f"{dialogue.speaker}: " if dialogue.speaker else ""
                         comic_content += f"  - {speaker_text}{dialogue.text}\n"
-            
+
             detailed_scenario = generate_scenario(
                 scenario_description=f"Based on this generated comic:\n\n{comic_content}\n\nOriginal concept: {concept}"
             )
@@ -746,30 +752,27 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
 def trim_prompt(prompt: str, max_len: int = 2000) -> str:
     if len(prompt) <= max_len:
         return prompt
-    # Try to remove long narrative suffix
-    parts = prompt.split(". ")
-    trimmed = []
-    total = 0
-    for p in parts:
-        if total + len(p) + 2 > max_len:
-            break
-        trimmed.append(p)
-        total += len(p) + 2
-    return ". ".join(trimmed)[:max_len]
+    # Instead of splitting by '. ', just cut at max_len, but try to end at a sentence boundary if possible
+    trimmed = prompt[:max_len]
+    last_period = trimmed.rfind('. ')
+    if last_period != -1 and last_period > max_len * 0.7:
+        # If a period is found near the end, cut there for a cleaner sentence ending
+        return trimmed[:last_period+1]
+    return trimmed
 
 
 def create_simple_comic_grid(images):
     """Create a simple comic grid layout as fallback when comic sheet creation fails"""
     try:
         num_images = len(images)
-        
+
         if num_images == 5:
             # Special 5-panel layout: 2 on top, 3 on bottom
             panel_size = (350, 280)
             grid_width = panel_size[0] * 3 + 40  # 3 panels wide with spacing
             grid_height = panel_size[1] * 2 + 30  # 2 panels high with spacing
             comic_grid = Image.new('RGB', (grid_width, grid_height), 'white')
-            
+
             # Top row: 2 panels centered
             positions = [
                 (panel_size[0] // 2 + 10, 10),  # Top left (centered)
@@ -784,7 +787,7 @@ def create_simple_comic_grid(images):
             grid_width = panel_size[0] * 3 + 40
             grid_height = panel_size[1] * 2 + 30
             comic_grid = Image.new('RGB', (grid_width, grid_height), 'white')
-            
+
             positions = []
             for i in range(6):
                 col = i % 3
@@ -797,11 +800,11 @@ def create_simple_comic_grid(images):
             panel_size = (400, 300)
             cols = 2 if num_images <= 4 else 3
             rows = (num_images + cols - 1) // cols
-            
+
             grid_width = panel_size[0] * cols + (cols + 1) * 10
             grid_height = panel_size[1] * rows + (rows + 1) * 10
             comic_grid = Image.new('RGB', (grid_width, grid_height), 'white')
-            
+
             positions = []
             for i in range(num_images):
                 col = i % cols
@@ -809,22 +812,22 @@ def create_simple_comic_grid(images):
                 x = col * (panel_size[0] + 10) + 10
                 y = row * (panel_size[1] + 10) + 10
                 positions.append((x, y))
-        
+
         # Resize and place all images
         for i, img in enumerate(images[:len(positions)]):
             if i < len(positions):
                 resized_img = img.resize(panel_size, Image.Resampling.LANCZOS)
                 comic_grid.paste(resized_img, positions[i])
-                
+
                 # Add simple border
                 from PIL import ImageDraw
                 draw = ImageDraw.Draw(comic_grid)
                 x, y = positions[i]
                 border_coords = (x-2, y-2, x + panel_size[0] + 2, y + panel_size[1] + 2)
                 draw.rectangle(border_coords, outline="black", width=3)
-        
+
         return comic_grid
-        
+
     except Exception as e:
         print(f"❌ Simple grid creation failed: {e}")
         # Ultimate fallback - single color image with text
@@ -833,7 +836,7 @@ def create_simple_comic_grid(images):
         draw = ImageDraw.Draw(fallback_image)
         try:
             font = ImageFont.load_default()
-            draw.text((50, 250), f"Comic Generation Fallback\n{len(images)} panels created\nLayout creation failed", 
+            draw.text((50, 250), f"Comic Generation Fallback\n{len(images)} panels created\nLayout creation failed",
                      fill='black', font=font, align='center')
         except:
             pass
@@ -844,10 +847,10 @@ def get_genre_art_style_combination(genre: str, art_style: str) -> dict:
     """Get the complete style combination for a specific genre and art style"""
     genre_lower = genre.lower() if genre else "action"
     art_style_lower = art_style.lower() if art_style else "comic book"
-    
+
     genre_info = GENRE_MAPPINGS.get(genre_lower, GENRE_MAPPINGS["action"])
     art_style_info = CONSISTENT_STYLES.get(art_style_lower, CONSISTENT_STYLES["comic book"])
-    
+
     return {
         "genre": genre_lower,
         "art_style": art_style_lower,
@@ -858,7 +861,7 @@ def get_genre_art_style_combination(genre: str, art_style: str) -> dict:
 
 def validate_genre_and_style(genre: str = None, art_style: str = None) -> tuple:
     """Validate and normalize genre and art style inputs"""
-    
+
     # Normalize genre
     if genre:
         genre_lower = genre.strip().lower()
@@ -869,7 +872,7 @@ def validate_genre_and_style(genre: str = None, art_style: str = None) -> tuple:
             genre = genre_lower
     else:
         genre = "action"
-    
+
     # Normalize art style
     if art_style:
         art_style_lower = art_style.strip().lower()
@@ -880,5 +883,5 @@ def validate_genre_and_style(genre: str = None, art_style: str = None) -> tuple:
             art_style = art_style_lower
     else:
         art_style = "comic book"
-    
+
     return genre, art_style
