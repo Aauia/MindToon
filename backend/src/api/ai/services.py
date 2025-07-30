@@ -327,6 +327,17 @@ async def generate_image_from_prompt(session: aiohttp.ClientSession, prompt: str
         if not STABILITY_API_KEY:
             raise Exception("STABILITY_API_KEY not configured")
 
+        # ✅ FIX: Validate and clean the prompt to meet Stability AI requirements
+        clean_prompt = validate_and_clean_prompt(prompt)
+        print(f"🔍 DEBUG: Original prompt length: {len(prompt)}, Cleaned prompt length: {len(clean_prompt)}")
+        
+        if len(clean_prompt) != len(prompt):
+            print(f"🔧 DEBUG: Prompt was cleaned. Original: '{prompt[:100]}...' -> Cleaned: '{clean_prompt[:100]}...'")
+        
+        # Final safety check
+        if len(clean_prompt) < 1 or len(clean_prompt) > 2000:
+            raise Exception(f"Invalid prompt length after cleaning: {len(clean_prompt)} (must be 1-2000 characters)")
+
         headers = {
             "Authorization": f"Bearer {STABILITY_API_KEY}",
             "Content-Type": "application/json",
@@ -336,7 +347,7 @@ async def generate_image_from_prompt(session: aiohttp.ClientSession, prompt: str
         strong_negative_prompt = negative_prompt or "text, blurry"
 
         payload = {
-            "text_prompts": [{"text": prompt, "weight": 1}, {"text": strong_negative_prompt, "weight": -1}],
+            "text_prompts": [{"text": clean_prompt, "weight": 1}, {"text": strong_negative_prompt, "weight": -1}],
             "cfg_scale": 7,
             "height": height,
             "width": width,
@@ -590,31 +601,59 @@ async def generate_complete_comic(concept: str, genre: str = None, art_style: st
             character_visuals_str = "; ".join(character_visuals) if character_visuals else "N/A"
             characters_str = ", ".join(panel_characters) if panel_characters else "the main characters"
 
-            # Compose the detailed prompt - MODIFIED HERE FOR PRIORITIZATION
-            image_prompt = (
-                f"{character_visuals_str}. {frame.description}. " # Core subject and action first
-                f"A {camera_shot} of {characters_str} in {setting}. " # Framing and setting
-                f"Depicted in {art_style_lower} style: {art_style_guide}. "
-                f"Color palette: {genre_guide['palette']}. "
-                f"Lighting: {genre_guide['lighting']}. "
-                f"Visual cues: {genre_guide['visual_cues']}. "
-                f"Mood: {genre_guide['mood']}. "
-                f"Atmosphere: {genre_guide['atmosphere']}."
-            )
+            # Compose the detailed prompt - IMPROVED VERSION
+            # Start with essential components, add optional ones conditionally
+            essential_parts = []
+            
+            # Core subject and action (mandatory)
+            if character_visuals_str and character_visuals_str != "N/A":
+                essential_parts.append(character_visuals_str)
+            
+            if frame.description and frame.description.strip():
+                essential_parts.append(frame.description.strip())
+            else:
+                essential_parts.append("a scene")  # fallback
+            
+            # Framing and setting
+            essential_parts.append(f"A {camera_shot} of {characters_str} in {setting}")
+            
+            # Style information
+            if art_style_guide and art_style_guide.strip():
+                essential_parts.append(f"Depicted in {art_style_lower} style: {art_style_guide}")
+            
+            # Genre-specific enhancements (only if they exist and aren't empty)
+            if genre_guide.get('palette'):
+                essential_parts.append(f"Color palette: {genre_guide['palette']}")
+            if genre_guide.get('lighting'):
+                essential_parts.append(f"Lighting: {genre_guide['lighting']}")
+            if genre_guide.get('visual_cues'):
+                essential_parts.append(f"Visual cues: {genre_guide['visual_cues']}")
+            if genre_guide.get('mood'):
+                essential_parts.append(f"Mood: {genre_guide['mood']}")
+            if genre_guide.get('atmosphere'):
+                essential_parts.append(f"Atmosphere: {genre_guide['atmosphere']}")
+            
+            # Join all parts
+            image_prompt = ". ".join(essential_parts) + "."
+            
+            # Add SFX if present
             if frame.sfx:
                 sfx_visual = ", ".join([f"visual representation of {sfx}" for sfx in frame.sfx])
                 image_prompt += f" SFX: {sfx_visual}."
-            if character_lora_reference:
-                # Prepend character_lora_reference for stronger influence
+            
+            # Add character reference if present
+            if character_lora_reference and character_lora_reference.strip():
                 image_prompt = f"{character_lora_reference}. " + image_prompt
-            # Remove redundant whitespace
-            image_prompt = " ".join(image_prompt.split())
-            # Ensure prompt is trimmed to max length
-            image_prompt = trim_prompt(image_prompt)
+            
+            # Clean up formatting
+            image_prompt = " ".join(image_prompt.split())  # Remove extra whitespace
+            image_prompt = validate_and_clean_prompt(image_prompt)  # Apply validation and cleaning
 
             # ADDED: Populate full_image_prompts
             full_image_prompts.append(image_prompt)
-
+            
+            # ✅ DEBUG: Log the final prompt for this panel
+            print(f"🔍 DEBUG: Panel {panel_number} final prompt ({len(image_prompt)} chars): {image_prompt[:200]}{'...' if len(image_prompt) > 200 else ''}")
 
             base_negative = "text, letters, words, inconsistent art style, mixed styles, different character design, poor quality, blurry, style variations"
             genre_negative_map = {
@@ -759,6 +798,42 @@ def trim_prompt(prompt: str, max_len: int = 2000) -> str:
         # If a period is found near the end, cut there for a cleaner sentence ending
         return trimmed[:last_period+1]
     return trimmed
+
+def validate_and_clean_prompt(prompt: str) -> str:
+    """
+    Validate and clean prompt to meet Stability AI requirements:
+    - Must be between 1 and 2000 characters
+    - Must contain meaningful content
+    """
+    if not prompt or not prompt.strip():
+        # If prompt is empty or only whitespace, return a default prompt
+        return "A high-quality digital art illustration"
+    
+    # Clean up the prompt
+    cleaned = prompt.strip()
+    
+    # Remove excessive whitespace and clean up formatting
+    cleaned = " ".join(cleaned.split())
+    
+    # Remove problematic patterns that might cause issues
+    cleaned = cleaned.replace("N/A.", "").replace("N/A,", "").replace("N/A", "")
+    cleaned = cleaned.replace("..", ".").replace(",,", ",").replace("  ", " ")
+    
+    # Remove leading/trailing punctuation cleanup
+    cleaned = cleaned.strip(" .,;:")
+    
+    # If after cleaning it's too short, add default content
+    if len(cleaned) < 10:
+        cleaned = f"{cleaned} high-quality digital art illustration" if cleaned else "A high-quality digital art illustration"
+    
+    # Ensure it doesn't exceed max length
+    cleaned = trim_prompt(cleaned, 2000)
+    
+    # Final validation
+    if len(cleaned) < 1:
+        return "A high-quality digital art illustration"
+    
+    return cleaned
 
 
 def create_simple_comic_grid(images):

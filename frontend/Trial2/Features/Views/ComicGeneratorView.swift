@@ -5,6 +5,8 @@ struct ComicGeneratorView: View {
     @StateObject var viewModel: ComicGeneratorViewModel
     @ObservedObject var navigation: NavigationViewModel
     @Environment(\.dismiss) private var dismiss // For the back arrow in the top bar
+    @FocusState private var isTextEditorFocused: Bool // For keyboard dismissal
+    @FocusState private var isTitleFieldFocused: Bool // For title field keyboard dismissal
     
     // Add world selection state
     @State private var selectedWorld: WorldType = .imaginationWorld
@@ -48,6 +50,7 @@ struct ComicGeneratorView: View {
                             .background(Color.white)
                             .cornerRadius(10)
                             .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                            .focused($isTitleFieldFocused)
                             .padding(.horizontal)
 
                         // World Section
@@ -197,11 +200,15 @@ struct ComicGeneratorView: View {
                                 .background(Color.white)
                                 .cornerRadius(10)
                                 .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                                .focused($isTextEditorFocused)
                             if viewModel.scriptText.isEmpty {
                                 Text("Enter your script or story idea...")
                                     .foregroundColor(.gray.opacity(0.6))
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 16)
+                                    .onTapGesture {
+                                        isTextEditorFocused = true
+                                    }
                             }
                         }
                         .padding(.horizontal)
@@ -215,6 +222,10 @@ struct ComicGeneratorView: View {
                                 isLoading: viewModel.isLoading,
                                 isDisabled: viewModel.comicTitle.isEmpty
                             ) {
+                                // Dismiss keyboard before generating
+                                isTextEditorFocused = false
+                                isTitleFieldFocused = false
+                                
                                 Task {
                                     await viewModel.generateComicWithWorld(worldType: selectedWorld)
                                 }
@@ -278,6 +289,18 @@ struct ComicGeneratorView: View {
                     .frame(maxWidth: .infinity, minHeight: 600)
                     // Disable all form fields when loading
                     .disabled(viewModel.isLoading)
+                }
+                .onTapGesture {
+                    // Dismiss keyboard when tapping outside text fields
+                    isTextEditorFocused = false
+                    isTitleFieldFocused = false
+                }
+                .onChange(of: viewModel.isLoading) { isLoading in
+                    // Automatically dismiss keyboard when generation starts
+                    if isLoading {
+                        isTextEditorFocused = false
+                        isTitleFieldFocused = false
+                    }
                 }
 
                 BottombarView(navigation: navigation)

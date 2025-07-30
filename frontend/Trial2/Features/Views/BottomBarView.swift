@@ -8,6 +8,7 @@ enum BottomBarTab: String, CaseIterable {
     case home = "Home"
     case create = "Create"
     case worlds = "Worlds"
+    case analytics = "Analytics"
     case profile = "Profile"
 
     var iconName: String {
@@ -15,6 +16,7 @@ enum BottomBarTab: String, CaseIterable {
         case .home: return "house.fill"
         case .create: return "plus.circle.fill"
         case .worlds: return "globe.americas.fill"
+        case .analytics: return "chart.bar.xaxis"
         case .profile: return "person.fill"
         }
     }
@@ -30,6 +32,7 @@ struct BottombarView: View {
         case .mainDashboard: return .home
         case .create, .comicGenerator: return .create
         case .worlds, .dreamWorld, .mindWorld, .imaginationWorld: return .worlds
+        case .analyticsDashboard: return .analytics
         case .profile: return .profile
         default: return .home
         }
@@ -41,6 +44,7 @@ struct BottombarView: View {
         case .home: return .mainDashboard
         case .create: return .create
         case .worlds: return .worlds
+        case .analytics: return .analyticsDashboard
         case .profile: return .profile
         }
     }
@@ -85,12 +89,12 @@ struct TabBarItem: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
+            VStack(spacing: 4) {
                 Image(systemName: iconName)
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(size: 20, weight: .medium))
                     .foregroundColor(isSelected ? .black : Color(hex: "#E6D6FF"))
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(isSelected ? .black : Color(hex: "#E6D6FF"))
             }
         }

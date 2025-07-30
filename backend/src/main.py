@@ -12,6 +12,7 @@ from api.chat.routing import router as chat_router
 from api.auth.routing import router as auth_router
 from api.auth.models import User  # Import User model to create table
 from api.auth.utils import get_password_hash
+from api.ai.analyses import AnalyticsEntry, AnalyticsInsight  # Import analytics models
 from sqlmodel import Session, select
 from typing import List
 
@@ -89,9 +90,11 @@ app.add_middleware(
 
 # Include routers
 from api.supabase.routing import router as supabase_router
+from api.ai.routing import router as ai_router
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(chat_router, prefix="/api/chats", tags=["Chat & Comics"])
 app.include_router(supabase_router, prefix="/api/supabase", tags=["Supabase"])
+app.include_router(ai_router, prefix="/api", tags=["AI Image Generation"])
 
 MY_PROJECT = os.environ.get("MY_PROJECT") or "this is my project"
 API_KEY = os.environ.get("API_KEY")

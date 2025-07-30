@@ -173,7 +173,7 @@ class ComicGeneratorViewModel: ObservableObject {
             print("🚀 Navigation call completed")
             
         } catch APIError.unauthorized {
-            errorMessage = "Please log in to generate comics"
+            errorMessage = "Session expired. You will be redirected to login automatically."
         } catch APIError.serverError(let code) {
             errorMessage = "Your session is expired , please log in again"
         } catch APIError.serverErrorMessage(let message) {

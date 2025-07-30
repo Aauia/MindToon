@@ -22,6 +22,7 @@ class NavigationViewModel: ObservableObject {
         case detailedScenario
         case accountDeletion
         case forgotPassword
+        case analyticsDashboard
     }
     @Published var currentScreen: Screen = .welcome
     @Published var generatedComic: ComicGenerationResponse?

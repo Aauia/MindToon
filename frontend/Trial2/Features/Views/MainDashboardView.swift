@@ -92,8 +92,8 @@ struct MainDashboardView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 56)
                 .padding(.bottom, 16)
-               
 
+           
             
             // 🟪 Bottom bar
        VStack(spacing: 0) {

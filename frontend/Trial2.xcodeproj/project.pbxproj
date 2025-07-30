@@ -29,6 +29,10 @@
 		682AC0BE2E09467100171857 /* CustomTopBarContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682AC0BD2E09467100171857 /* CustomTopBarContent.swift */; };
 		682AC0C02E0947DA00171857 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682AC0BF2E0947DA00171857 /* ProfileView.swift */; };
 		682AC0C22E094D0200171857 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682AC0C12E094D0200171857 /* ProfileViewModel.swift */; };
+		68467EF92E3A1656002524A5 /* AnalyticsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68467EF82E3A1655002524A5 /* AnalyticsDashboardView.swift */; };
+		68467EFB2E3A16B0002524A5 /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68467EFA2E3A16AF002524A5 /* AnalyticsViewModel.swift */; };
+		68467EFD2E3A16DE002524A5 /* AnalyticsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68467EFC2E3A16DC002524A5 /* AnalyticsModels.swift */; };
+		68467EFF2E3A1741002524A5 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68467EFE2E3A1741002524A5 /* AnalyticsService.swift */; };
 		6858985E2E16854800EF17D0 /* RegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6858985D2E16854800EF17D0 /* RegistrationView.swift */; };
 		685898602E16858000EF17D0 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6858985F2E16858000EF17D0 /* RootView.swift */; };
 		685898642E1685FD00EF17D0 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685898632E1685FD00EF17D0 /* LoginView.swift */; };
@@ -82,6 +86,10 @@
 		682AC0BD2E09467100171857 /* CustomTopBarContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTopBarContent.swift; sourceTree = "<group>"; };
 		682AC0BF2E0947DA00171857 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		682AC0C12E094D0200171857 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
+		68467EF82E3A1655002524A5 /* AnalyticsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsDashboardView.swift; sourceTree = "<group>"; };
+		68467EFA2E3A16AF002524A5 /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
+		68467EFC2E3A16DC002524A5 /* AnalyticsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsModels.swift; sourceTree = "<group>"; };
+		68467EFE2E3A1741002524A5 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		6858985D2E16854800EF17D0 /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
 		6858985F2E16858000EF17D0 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		685898632E1685FD00EF17D0 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -185,6 +193,7 @@
 		682AC0922E0922AF00171857 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				68467EFC2E3A16DC002524A5 /* AnalyticsModels.swift */,
 				68CC377B2E15F38100BC00D1 /* APIModels.swift */,
 				68CC377D2E15F3AF00BC00D1 /* CollectionModels.swift */,
 				68CC377F2E15F3C500BC00D1 /* ErrorModels.swift */,
@@ -197,6 +206,7 @@
 		682AC0932E0922BA00171857 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				68467EFE2E3A1741002524A5 /* AnalyticsService.swift */,
 				68D161A02E0E598500BAEEF5 /* APIClient.swift */,
 				68D161A22E0E59FC00BAEEF5 /* AuthManager.swift */,
 				68CC37852E15F47F00BC00D1 /* StorageManager.swift */,
@@ -218,6 +228,7 @@
 		682AC09E2E09273600171857 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				68467EFA2E3A16AF002524A5 /* AnalyticsViewModel.swift */,
 				682AC0A02E09275C00171857 /* WelcomeViewModel.swift */,
 				682AC0B32E093B2500171857 /* ComicGeneratorViewModel.swift */,
 				682AC0C12E094D0200171857 /* ProfileViewModel.swift */,
@@ -231,6 +242,7 @@
 		682AC09F2E09274600171857 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				68467EF82E3A1655002524A5 /* AnalyticsDashboardView.swift */,
 				68ED4F8B2E26B09B00065358 /* ForgotPassword.swift */,
 				682AC0A22E09277F00171857 /* WelcomeView.swift */,
 				682AC0A92E09285D00171857 /* MainDashboardView.swift */,
@@ -345,6 +357,7 @@
 				68261B202E12A71200330A4B /* ComicViewerView.swift in Sources */,
 				682AC0BC2E09459300171857 /* ImaginationWorldView.swift in Sources */,
 				68CC37982E15F68600BC00D1 /* CollectionViewModel.swift in Sources */,
+				68467EFF2E3A1741002524A5 /* AnalyticsService.swift in Sources */,
 				682AC0AA2E09285D00171857 /* MainDashboardView.swift in Sources */,
 				68CC378C2E15F52F00BC00D1 /* AccountDeletionView.swift in Sources */,
 				682AC0BE2E09467100171857 /* CustomTopBarContent.swift in Sources */,
@@ -374,12 +387,15 @@
 				682AC0C02E0947DA00171857 /* ProfileView.swift in Sources */,
 				68DDA1D42E0DC1A4004B2CCC /* NavigationViewModel.swift in Sources */,
 				68CC37862E15F47F00BC00D1 /* StorageManager.swift in Sources */,
+				68467EF92E3A1656002524A5 /* AnalyticsDashboardView.swift in Sources */,
 				68CC37842E15F40D00BC00D1 /* WorldModels.swift in Sources */,
 				68CC37902E15F5B300BC00D1 /* CollectionsView.swift in Sources */,
 				685898602E16858000EF17D0 /* RootView.swift in Sources */,
+				68467EFB2E3A16B0002524A5 /* AnalyticsViewModel.swift in Sources */,
 				682AC0B22E093B0B00171857 /* ComicGeneratorView.swift in Sources */,
 				6858985E2E16854800EF17D0 /* RegistrationView.swift in Sources */,
 				68CC379A2E15F6AA00BC00D1 /* ScenarioViewModel.swift in Sources */,
+				68467EFD2E3A16DE002524A5 /* AnalyticsModels.swift in Sources */,
 				682AC0B82E09456600171857 /* DreamWorldView.swift in Sources */,
 				682AC0B42E093B2500171857 /* ComicGeneratorViewModel.swift in Sources */,
 				68F06FF72E1C61EE00F030B1 /* PixelsView.swift in Sources */,

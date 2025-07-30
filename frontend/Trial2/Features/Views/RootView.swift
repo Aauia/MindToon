@@ -8,7 +8,7 @@ struct RootView: View {
         Group {
             if authManager.isAuthenticated { // Simplified condition
                 // User is authenticated, show main app
-            switch navigation.currentScreen {
+                switch navigation.currentScreen {
                 case .welcome:
                     WelcomeView(viewModel: WelcomeViewModel(), navigation: navigation)
                 case .mainDashboard:
@@ -24,10 +24,13 @@ struct RootView: View {
                             if let comic = navigation.generatedComic {
                                 print("🔍 Comic data available for viewer:")
                                 print("🔍 - Title: '\(comic.title)'")
-                                
                                 print("🔍 - About to display ComicViewerView")
                             } else {
                                 print("⚠️ No comic available in navigation")
+                                // Redirect to main dashboard if no comic data
+                                DispatchQueue.main.async {
+                                    navigation.currentScreen = .mainDashboard
+                                }
                             }
                         }
                 case .imageGenerator:
@@ -50,8 +53,15 @@ struct RootView: View {
                         .font(.title)
                         .navigationTitle("Scenarios")
                 case .detailedScenario:
-                    Text("Scenarios View - Coming Soon")
-                    
+                    if let scenario = navigation.selectedScenario {
+                        Text("Detailed Scenario View")
+                            .font(.title)
+                            .navigationTitle("Scenario")
+                    } else {
+                        Text("No scenario selected")
+                            .font(.title)
+                            .navigationTitle("Scenario")
+                    }
                 case .accountDeletion:
                     // AccountDeletion is handled via sheet in ProfileView
                     ProfileView(navigation: navigation)
@@ -60,9 +70,12 @@ struct RootView: View {
                     MainDashboardView(navigation: navigation)
                 case .forgotPassword:
                     WelcomeView(viewModel: WelcomeViewModel(), navigation: navigation)
-
-                              
-              
+                case .analyticsDashboard:
+                    AnalyticsDashboardView(navigation: navigation)
+                @unknown default:
+                    // Handle any future cases safely
+                    
+                    MainDashboardView(navigation: navigation)
                 }
             } else {
                 // User is not authenticated, show auth screens
@@ -87,7 +100,10 @@ struct RootView: View {
         .onReceive(authManager.$isAuthenticated) { isAuthenticated in
             print("🔍 Auth state changed: \(isAuthenticated)")
             if isAuthenticated {
-                navigation.currentScreen = .mainDashboard
+                // Ensure we're on the main thread when updating navigation
+                DispatchQueue.main.async {
+                    navigation.currentScreen = .mainDashboard
+                }
             }
         }
         .onReceive(navigation.$currentScreen) { screen in

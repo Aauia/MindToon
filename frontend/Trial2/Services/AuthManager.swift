@@ -27,6 +27,9 @@ class AuthManager: ObservableObject {
     
     
     private init() {
+        // Add time sync check
+        print("🔑 [INIT DEBUG] Client time: \(Date())")
+        print("🔑 [INIT DEBUG] Client timezone: \(TimeZone.current)")
         checkAuthStatus()
     }
     
@@ -41,6 +44,11 @@ class AuthManager: ObservableObject {
             // Store token
             UserDefaults.standard.set(tokenResponse.accessToken, forKey: tokenKey)
             print("🔑 Token stored successfully: \(tokenResponse.accessToken.prefix(10))...")
+            
+            // Debug token expiration
+            if let token = UserDefaults.standard.string(forKey: tokenKey) {
+                debugTokenExpiration(token)
+            }
             
             // Fetch user profile
             let user = try await APIClient.shared.getUserProfile()
@@ -231,7 +239,9 @@ class AuthManager: ObservableObject {
             print("✅ Token refreshed and stored")
         } catch {
             print("❌ Failed to refresh token:", error.localizedDescription)
-            logout()
+            Task { @MainActor in
+                logout()
+            }
         }
     }
     
@@ -274,19 +284,130 @@ class AuthManager: ObservableObject {
     // MARK: - Helper Methods
     func getStoredToken() async -> String? {
         var token = UserDefaults.standard.string(forKey: tokenKey)
-
-        if token == nil || token!.isEmpty || token!.count < 10 {
+        
+        // Enhanced debugging
+        print("🔑 [DEBUG] Token check:")
+        print("🔑 [DEBUG] Token exists: \(token != nil)")
+        if let token = token {
+            print("🔑 [DEBUG] Token length: \(token.count)")
+            print("🔑 [DEBUG] Token preview: \(token.prefix(20))...")
+            
+            // Check if JWT is expired
+            if isJWTExpired(token) {
+                print("🔑 [DEBUG] Token is expired, attempting refresh...")
+                do {
+                    let newToken = try await APIClient.shared.refreshAccessToken()
+                    UserDefaults.standard.set(newToken, forKey: tokenKey)
+                    print("🔑 [DEBUG] Token refreshed successfully")
+                    return newToken
+                } catch {
+                    print("❌ Refresh failed in getStoredToken():", error)
+                    // Auto-logout when refresh token expires
+                    Task { @MainActor in
+                        self.logout()
+                    }
+                    return nil
+                }
+            }
+        } else {
             print("⚠️ Token invalid or missing — attempting refresh...")
             do {
                 token = try await APIClient.shared.refreshAccessToken()
                 UserDefaults.standard.set(token, forKey: tokenKey)
+                print("🔑 [DEBUG] New token obtained via refresh")
             } catch {
                 print("❌ Refresh failed in getStoredToken():", error)
+                // Auto-logout when refresh token expires
+                Task { @MainActor in
+                    self.logout()
+                }
                 return nil
             }
         }
 
         return token
+    }
+    
+    // Helper function to check if JWT is expired
+    private func isJWTExpired(_ token: String) -> Bool {
+        let parts = token.components(separatedBy: ".")
+        guard parts.count == 3 else {
+            print("🔑 [DEBUG] Invalid JWT format")
+            return true
+        }
+        
+        let payload = parts[1]
+        var base64 = payload
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        
+        // Add padding if needed
+        while base64.count % 4 != 0 {
+            base64 += "="
+        }
+        
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let exp = json["exp"] as? Double else {
+            print("🔑 [DEBUG] Could not decode JWT payload")
+            return false // If we can't decode, assume it's valid and let server decide
+        }
+        
+        let expirationDate = Date(timeIntervalSince1970: exp)
+        let now = Date()
+        let isExpired = now >= expirationDate
+        
+        print("🔑 [DEBUG] Token expiration: \(expirationDate)")
+        print("🔑 [DEBUG] Current time: \(now)")
+        print("🔑 [DEBUG] Is expired: \(isExpired)")
+        print("🔑 [DEBUG] Time until expiry: \(expirationDate.timeIntervalSince(now)) seconds")
+        
+        return isExpired
+    }
+    
+    // Debug helper to show token expiration info
+    private func debugTokenExpiration(_ token: String) {
+        print("🔑 [LOGIN DEBUG] New token received:")
+        let parts = token.components(separatedBy: ".")
+        guard parts.count == 3 else {
+            print("🔑 [LOGIN DEBUG] Invalid JWT format")
+            return
+        }
+        
+        let payload = parts[1]
+        var base64 = payload
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        
+        while base64.count % 4 != 0 {
+            base64 += "="
+        }
+        
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            print("🔑 [LOGIN DEBUG] Could not decode JWT payload")
+            return
+        }
+        
+        if let exp = json["exp"] as? Double {
+            let expirationDate = Date(timeIntervalSince1970: exp)
+            let now = Date()
+            let timeUntilExpiry = expirationDate.timeIntervalSince(now)
+            
+            print("🔑 [LOGIN DEBUG] Token expires at: \(expirationDate)")
+            print("🔑 [LOGIN DEBUG] Current time: \(now)")
+            print("🔑 [LOGIN DEBUG] Time until expiry: \(timeUntilExpiry) seconds (\(timeUntilExpiry/60) minutes)")
+            print("🔑 [LOGIN DEBUG] Is already expired: \(timeUntilExpiry <= 0)")
+        }
+        
+        if let iat = json["iat"] as? Double {
+            let issuedDate = Date(timeIntervalSince1970: iat)
+            print("🔑 [LOGIN DEBUG] Token issued at: \(issuedDate)")
+        }
+        
+        if let sub = json["sub"] as? String {
+            print("🔑 [LOGIN DEBUG] Token subject (user): \(sub)")
+        }
     }
 
 

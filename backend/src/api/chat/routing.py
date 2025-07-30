@@ -135,6 +135,9 @@ async def generate_comic_endpoint(
             session.refresh(new_comic)
             print(f"✅ Comic saved to database with ID: {new_comic.id}")
             
+            # Analytics are now performed on existing comics data automatically
+            print(f"✅ Comic {new_comic.id} ready for analytics analysis")
+            
             # Save the detailed scenario linked to this comic (only if generated)
             if detailed_scenario:
                 new_scenario = DetailedScenario(
@@ -246,6 +249,9 @@ async def generate_comic_with_data_endpoint(
         session.add(new_comic)
         session.commit()
         session.refresh(new_comic)
+        
+        # Analytics are now performed on existing comics data automatically
+        print(f"✅ Comic {new_comic.id} ready for analytics analysis")
         
         # Save the detailed scenario linked to this comic (only if generated)
         if detailed_scenario:
