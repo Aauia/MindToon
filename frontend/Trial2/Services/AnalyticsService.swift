@@ -47,7 +47,7 @@ struct ComicRecommendationsResponse: Codable {
 
 class AnalyticsService {
     static let shared = AnalyticsService()
-    private let baseURL = "http://localhost:8080" // Update as needed
+    private let baseURL = "https://mindtoon.space" // Update as needed
 
     /// Fetch comic recommendations (per world or cross-world)
     func fetchComicRecommendations(userId: Int, world: String? = nil, limit: Int = 5, completion: @escaping (Result<ComicRecommendationsResponse, Error>) -> Void) {
