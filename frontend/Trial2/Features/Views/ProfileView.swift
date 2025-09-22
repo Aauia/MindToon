@@ -1,9 +1,8 @@
 import SwiftUI
 
-// MARK: - ProfileView
+
 struct ProfileView: View {
-    // Initialize the ViewModel as a StateObject. This makes the ViewModel
-    // owned by the View and keeps it alive for the View's lifecycle.
+
     @StateObject var viewModel = ProfileViewModel()
     @ObservedObject var navigation: NavigationViewModel
     @Environment(\.dismiss) private var dismiss
@@ -22,14 +21,13 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 25) {
-                        // Show a loading indicator if the ViewModel is busy
+                 
                         if viewModel.isLoading {
                             ProgressView("Loading Profile...")
                                 .padding(.top, 40)
                                 .foregroundColor(.white) // Adjust color for background
                         } else {
-                            // Placeholder for User Avatar/Image
-                            // You can use viewModel.profileImageUrl here once implemented
+                        
                             Image(systemName: "person.circle.fill")
                                 .resizable()
                                 .scaledToFit()
@@ -87,10 +85,9 @@ struct ProfileView: View {
                         .padding(.horizontal)
                         .padding(.top, 20)
 
-                        // Logout Button (example of ViewModel interaction)
                         Button(action: {
                             viewModel.logout()
-                            // After successful logout, AppCoordinator would transition to WelcomeScreen
+
                         }) {
                             Text("Log Out")
                                 .font(.headline)
@@ -134,7 +131,7 @@ struct ProfileView: View {
     }
 }
 
-// MARK: - ProfileOptionRow (Reusable Helper View for list items)
+
 struct ProfileOptionRow: View {
     let icon: String
     let title: String
@@ -174,7 +171,7 @@ struct ProfileOptionRow: View {
     }
 }
 
-// MARK: - Preview - No Change Here
+
 #Preview {
     ProfileView(navigation: NavigationViewModel())
 }

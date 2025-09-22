@@ -1,12 +1,12 @@
 import Foundation
 import Combine
 
-// MARK: - World Manager
+
 @MainActor
 class WorldManager: ObservableObject {
     static let shared = WorldManager()
     
-    // Published properties
+
     @Published var worlds: [WorldType: [ComicGenerationResponse]] = [:]
     @Published var worldStats: [WorldType: WorldStatsResponse] = [:]
     @Published var worldAnalytics: [WorldType: WorldAnalytics] = [:]
@@ -15,12 +15,12 @@ class WorldManager: ObservableObject {
     @Published var currentPage: [WorldType: Int] = [:]
     @Published var hasMorePages: [WorldType: Bool] = [:]
     
-    // Private properties
+
     private let apiClient = APIClient.shared
     private var cancellables: Set<AnyCancellable> = []
     private let cache = WorldCache()
     
-    // Constants
+
     private let pageSize = 20
     private let maxCacheAge: TimeInterval = 5 * 60 // 5 minutes
     
@@ -105,13 +105,13 @@ class WorldManager: ObservableObject {
             currentPage[worldType] = page
             hasMorePages[worldType] = comics.count == pageSize
             
-            // Cache results
+         
             cache.setComics(comics, for: worldType, page: page)
             
             print("✅ Loaded \(comics.count) comics for \(worldType.displayName) (page \(page))")
             
         } catch let decodingError as DecodingError {
-            // Handle specific decoding errors gracefully
+            
             ErrorLogger.shared.log(
                 APIError.decodingError(decodingError),
                 context: "loadWorldComics - \(worldType.displayName)",
@@ -119,7 +119,7 @@ class WorldManager: ObservableObject {
             )
             print("❌ Failed to decode comics for \(worldType.displayName): \(decodingError)")
             
-            // Provide fallback empty array for decoding errors
+
             if page == 1 {
                 worlds[worldType] = []
             }
@@ -151,7 +151,7 @@ class WorldManager: ObservableObject {
         await loadWorldStats(for: worldType, refresh: true)
     }
     
-    // MARK: - World Statistics
+
     func loadWorldStats(for worldType: WorldType, refresh: Bool = false) async {
         // Check cache first
         if !refresh, let cachedStats = cache.getStats(for: worldType) {
@@ -167,8 +167,7 @@ class WorldManager: ObservableObject {
             
             let stats = try await apiClient.getWorldStats(worldType: worldType)
             worldStats[worldType] = stats
-            
-            // Cache results
+
             cache.setStats(stats, for: worldType)
             
             print("✅ Loaded stats for \(worldType.displayName)")
@@ -224,7 +223,7 @@ class WorldManager: ObservableObject {
         }
     }
     
-    // MARK: - World Analytics
+
     func loadWorldAnalytics(for worldType: WorldType) async {
         do {
             let token = await AuthManager.shared.getStoredToken()
@@ -267,7 +266,7 @@ class WorldManager: ObservableObject {
             worldStats[worldType] = stats
         }
         
-        // Clear cache to force refresh
+
         cache.clearComics(for: worldType)
     }
     
@@ -277,14 +276,14 @@ class WorldManager: ObservableObject {
         
         worlds[worldType]?[index] = updatedComic
         
-        // Clear cache to force refresh
+
         cache.clearComics(for: worldType)
     }
     
     func removeComicFromWorld(comicId: Int, worldType: WorldType) {
         worlds[worldType]?.removeAll { $0.id == comicId }
         
-        // Update stats
+
         if var stats = worldStats[worldType] {
             stats = WorldStatsResponse(
                 worldType: stats.worldType,
@@ -298,11 +297,11 @@ class WorldManager: ObservableObject {
             worldStats[worldType] = stats
         }
         
-        // Clear cache to force refresh
+
         cache.clearComics(for: worldType)
     }
     
-    // MARK: - Utility Methods
+
     func getComicsCount(for worldType: WorldType) -> Int {
         return worlds[worldType]?.count ?? 0
     }
@@ -334,7 +333,7 @@ class WorldManager: ObservableObject {
         cache.clearAll()
     }
     
-    // MARK: - World Preferences
+
     func saveWorldPreferences(_ preferences: WorldPreferences) async {
         do {
             let token = await AuthManager.shared.getStoredToken()
@@ -373,7 +372,7 @@ class WorldManager: ObservableObject {
     }
 }
 
-// MARK: - World Cache
+
 private class WorldCache {
     private var comicsCache: [WorldType: [Int: CachedComics]] = [:]
     private var statsCache: [WorldType: CachedStats] = [:]
@@ -439,7 +438,7 @@ private class WorldCache {
         comicsCache.removeAll()
         statsCache.removeAll()
         
-        // Reinitialize
+      
         for worldType in WorldType.allCases {
             comicsCache[worldType] = [:]
         }

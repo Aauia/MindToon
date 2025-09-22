@@ -3,15 +3,14 @@ import UniformTypeIdentifiers
 
 class APIClient {
     static let shared = APIClient()
-    private let baseURLString = "https://mindtoon.space" // Change for production
+    private let baseURLString = "https://mindtoon.space" 
     //private let baseURLString = "http://localhost:8080"
     private var baseURL: URL { URL(string: baseURLString)! }
     
-    // Custom URLSession with increased timeout
+
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 420 // seconds (5 minutes)
-        config.timeoutIntervalForResource = 420 // seconds (5 minutes)
+        config.timeoutIntervalForRequest = 420 
         config.httpShouldSetCookies = true
         config.httpCookieAcceptPolicy = .always
         return URLSession(configuration: config)
@@ -33,8 +32,7 @@ class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Enable cookie handling to send the refresh token
+     
         request.httpShouldHandleCookies = true
 
         let (data, response) = try await session.data(for: request)
@@ -51,14 +49,14 @@ class APIClient {
         let result = try JSONDecoder().decode(TokenResponse.self, from: data)
         print("🔁 Refreshed token: \(result.accessToken.prefix(10))...")
         
-        // Store refreshed token
+      
         UserDefaults.standard.set(result.accessToken, forKey: "access_token")
         
         return result.accessToken
     }
 
     
-    // MARK: - Authentication
+
     func login(username: String, password: String) async throws -> TokenResponse {
         let url = URL(string: "\(baseURLString)/api/auth/token")!
         var request = URLRequest(url: url)
@@ -110,7 +108,7 @@ class APIClient {
         print("✅ APIClient: Registration successful. UserResponse received: \(decodedResponse)")
         return decodedResponse
     }
-    // Step 1: Start registration
+    
     func startRegistration(_ user: StartRegistrationRequest) async throws {
         let url = URL(string: "\(baseURLString)/api/auth/start-registration")!
         var request = URLRequest(url: url)
@@ -125,7 +123,7 @@ class APIClient {
         }
     }
 
-    // Step 2: Confirm with verification code
+    
     func confirmRegistration(_ data: ConfirmRegistrationRequest) async throws -> UserResponse {
         let url = URL(string: "\(baseURLString)/api/auth/confirm-registration")!
         var request = URLRequest(url: url)

@@ -1,29 +1,28 @@
 import Foundation
 import Combine
 
-// MARK: - Storage Manager
 @MainActor
 class StorageManager: ObservableObject {
     static let shared = StorageManager()
     
-    // Published properties
+
     @Published var storageUsage: StorageUsage?
     @Published var uploadProgress: [String: Double] = [:]
     @Published var isUploading: Bool = false
     @Published var errorMessage: String?
     
-    // Private properties
+
     private let apiClient = APIClient.shared
     private var cancellables: Set<AnyCancellable> = []
     
-    // Constants
+
     private let bucketName = "comic-images"
     private let maxFileSize: Int64 = 10 * 1024 * 1024 // 10MB
     private let allowedExtensions = ["png", "jpg", "jpeg", "webp"]
     
     private init() {}
     
-    // MARK: - Storage Usage
+
     func loadStorageUsage() async {
         do {
             let token = await AuthManager.shared.getStoredToken()
@@ -45,7 +44,7 @@ class StorageManager: ObservableObject {
         }
     }
     
-    // MARK: - File Upload
+
     func uploadComicImage(
         imageData: Data,
         fileName: String,
@@ -106,7 +105,7 @@ class StorageManager: ObservableObject {
         isUploading = false
     }
     
-    // MARK: - File Download
+
     func downloadComicImage(url: String) async throws -> Data {
         do {
             let token = await AuthManager.shared.getStoredToken()
@@ -125,7 +124,7 @@ class StorageManager: ObservableObject {
         }
     }
     
-    // MARK: - File Management
+    
     func deleteComicImage(url: String) async throws {
         do {
             let token = await AuthManager.shared.getStoredToken()
@@ -171,8 +170,7 @@ class StorageManager: ObservableObject {
             throw error
         }
     }
-    
-    // MARK: - Storage Cleanup
+   
     func cleanupOrphanedImages() async throws -> StorageCleanupResult {
         do {
             let token = await AuthManager.shared.getStoredToken()
@@ -221,7 +219,7 @@ class StorageManager: ObservableObject {
         }
     }
     
-    // MARK: - Utility Methods
+
     private func getContentType(for fileExtension: String) -> String {
         switch fileExtension {
         case "png": return "image/png"

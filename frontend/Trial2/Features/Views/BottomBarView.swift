@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 #endif
 
-// MARK: - BottomBarTab (Enum for Tab Identification)
+
 enum BottomBarTab: String, CaseIterable {
     case home = "Home"
     case create = "Create"
@@ -22,11 +22,11 @@ enum BottomBarTab: String, CaseIterable {
     }
 }
 
-// MARK: - BottombarView
+
 struct BottombarView: View {
     @ObservedObject var navigation: NavigationViewModel
     
-    // Helper to map NavigationViewModel.Screen to BottomBarTab
+
     private func tab(for screen: NavigationViewModel.Screen) -> BottomBarTab {
         switch screen {
         case .mainDashboard: return .home
@@ -38,7 +38,7 @@ struct BottombarView: View {
         }
     }
     
-    // Helper to map BottomBarTab to NavigationViewModel.Screen
+   
     private func screen(for tab: BottomBarTab) -> NavigationViewModel.Screen {
         switch tab {
         case .home: return .mainDashboard
@@ -53,14 +53,14 @@ struct BottombarView: View {
         let selectedTab = tab(for: navigation.currentScreen)
         HStack {
             Spacer()
-            // Iterate over all cases of our enum to create tabs
+           
             ForEach(BottomBarTab.allCases, id: \.self) { tab in
                 TabBarItem(
                     iconName: tab.iconName,
                     label: tab.rawValue,
                     isSelected: selectedTab == tab
                 ) {
-                    // Only update if not already selected
+                   
                     if selectedTab != tab {
                         navigation.currentScreen = screen(for: tab)
                     }
@@ -68,19 +68,19 @@ struct BottombarView: View {
                 Spacer()
             }
         }
-        // Restore original vertical padding
-        .padding(.vertical, 12) // modest height
-        .padding(.horizontal, 0) // edge-to-edge
+
+        .padding(.vertical, 12) 
+        .padding(.horizontal, 0) 
         .background(
             Color(hex: "#5A3FA0").opacity(0.85)
         )
         .ignoresSafeArea(.container, edges: .bottom)
-        .padding(.horizontal, 0) // no extra margin
-        .padding(.bottom, 0) // flush with bottom
+        .padding(.horizontal, 0)
+        .padding(.bottom, 0) 
     }
 }
 
-// MARK: - TabBarItem
+
 struct TabBarItem: View {
     let iconName: String
     let label: String
@@ -111,7 +111,7 @@ struct BlurView: UIViewRepresentable {
 }
 #endif
 
-// MARK: - Preview
+
 #Preview {
     BottombarView(navigation: NavigationViewModel())
 }

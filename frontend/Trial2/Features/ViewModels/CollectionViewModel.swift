@@ -2,10 +2,10 @@ import Foundation
 import SwiftUI
 import Combine
 
-// MARK: - Collection ViewModel
+
 @MainActor
 class CollectionViewModel: ObservableObject {
-    // Published properties
+
     @Published var collections: [ComicCollectionResponse] = []
     @Published var selectedCollection: ComicCollectionResponse?
     @Published var collectionStats: CollectionStats?
@@ -23,20 +23,19 @@ class CollectionViewModel: ObservableObject {
     @Published var showingFilters: Bool = false
     @Published var sortOption: CollectionSortOption = .name
     @Published var minComicsFilter: Int = 0
-    
-    // Form data
+
     @Published var formData = CollectionFormData()
     
-    // Private properties
+    
     private let apiClient = APIClient.shared
     private var cancellables: Set<AnyCancellable> = []
     private let pageSize = 20
     
-    // Computed properties
+
     var filteredCollections: [ComicCollectionResponse] {
         var filtered = collections
         
-        // Apply search filter
+
         if !searchText.isEmpty {
             filtered = filtered.filter { collection in
                 collection.name.localizedCaseInsensitiveContains(searchText) ||
@@ -45,17 +44,16 @@ class CollectionViewModel: ObservableObject {
             }
         }
         
-        // Apply world filter
+
         if let worldFilter = selectedWorldFilter {
             filtered = filtered.filter { $0.worldType == worldFilter }
         }
         
-        // Apply public filter
+
         if showPublicOnly {
             filtered = filtered.filter { $0.isPublic }
         }
-        
-        // Apply tag filter
+
         if !selectedTags.isEmpty {
             filtered = filtered.filter { collection in
                 !Set(collection.tags).isDisjoint(with: selectedTags)
@@ -107,7 +105,7 @@ class CollectionViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    // MARK: - Data Loading
+ 
     func loadInitialData() async {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.loadCollections() }
@@ -549,7 +547,7 @@ class CollectionViewModel: ObservableObject {
     }
 }
 
-// MARK: - Collection Insights Model
+
 struct CollectionInsights {
     let totalCollections: Int
     let averageComicsPerCollection: Double

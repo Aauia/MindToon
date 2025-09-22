@@ -1,10 +1,10 @@
 import Foundation
 
-// Explicit typealiases to resolve ambiguity with old APIModel.swift
+
 typealias TestingHealthResponse = HealthResponse
 typealias TestingComicRequest = ComicRequest
 
-// MARK: - Testing Service (No Auth Required)
+
 class TestingService {
     static let shared = TestingService()
     
@@ -52,7 +52,7 @@ class TestingService {
         }
     }
     
-    // MARK: - Backend Health Testing
+
     func testBackendHealth() async throws -> TestingHealthResponse {
         let startTime = Date()
         
@@ -83,7 +83,7 @@ class TestingService {
         }
     }
     
-    // MARK: - Comprehensive Backend Testing
+    
     func runComprehensiveTests() async -> TestingSummary {
         let startTime = Date()
         var totalTests = 0
@@ -319,7 +319,7 @@ class TestingService {
         )
     }
     
-    // MARK: - Export Test Results
+
     func exportTestResults() -> String {
         let summary = getTestSummary()
         var report = """
@@ -355,7 +355,7 @@ class TestingService {
         return report
     }
     
-    // MARK: - Automated Testing
+
     func scheduleAutomatedTests(interval: TimeInterval = 3600) { // Default: every hour
         Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             Task {
@@ -373,7 +373,7 @@ class TestingService {
     }
 }
 
-// MARK: - Testing Models
+
 struct TestResult {
     let testName: String
     let success: Bool
@@ -447,7 +447,7 @@ struct TestResultSummary {
     }
 }
 
-// MARK: - Preview Data
+
 #if DEBUG
 extension TestResult {
     static let passedPreview = TestResult(

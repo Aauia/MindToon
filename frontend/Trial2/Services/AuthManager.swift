@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-// Explicit typealiases to resolve ambiguity with old APIModel.swift
+
 typealias AuthUserResponse = UserResponse
 typealias AuthRegisterRequest = RegisterRequest
 typealias AuthAccountDeletionRequest = AccountDeletionRequest
@@ -145,12 +145,12 @@ class AuthManager: ObservableObject {
             let user = try await APIClient.shared.confirmRegistration(request)
             currentUser = user
 
-            // Save user data
+
             if let userData = try? JSONEncoder().encode(user) {
                 UserDefaults.standard.set(userData, forKey: userKey)
             }
 
-            // Auto-login after confirmation
+    
             await login(username: username, password: password)
             
             if !isAuthenticated {
@@ -223,7 +223,7 @@ class AuthManager: ObservableObject {
             let user = try await APIClient.shared.getUserProfile()
             currentUser = user
             
-            // Update stored user data
+
             if let userData = try? JSONEncoder().encode(user) {
                 UserDefaults.standard.set(userData, forKey: userKey)
             }
@@ -281,11 +281,11 @@ class AuthManager: ObservableObject {
         }
     }
     
-    // MARK: - Helper Methods
+
     func getStoredToken() async -> String? {
         var token = UserDefaults.standard.string(forKey: tokenKey)
         
-        // Enhanced debugging
+
         print("🔑 [DEBUG] Token check:")
         print("🔑 [DEBUG] Token exists: \(token != nil)")
         if let token = token {

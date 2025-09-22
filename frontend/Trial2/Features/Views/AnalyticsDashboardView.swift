@@ -7,14 +7,14 @@ struct AnalyticsDashboardView: View {
     @State private var selectedDigestPeriod: String = "weekly" // Default to weekly
     let userId: Int = 1 // TODO: Replace with actual user id from auth/session
     
-    // Available digest periods
+   
     private let digestPeriods = [
         ("weekly", "Weekly", "calendar"),
         ("monthly", "Monthly", "calendar.circle"),
         ("all_time", "All Time", "clock.arrow.circlepath")
     ]
     
-    // Available worlds for selection
+   
     private let availableWorlds = [
         ("imagination_world", "Imagination World", "wand.and.stars", Color.purple),
         ("mind_world", "Mind World", "brain.head.profile", Color.blue),
@@ -47,7 +47,7 @@ struct AnalyticsDashboardView: View {
             }
             
             VStack(spacing: 0) {
-                // Custom Top Bar with Back Button
+               
                 HStack {
                     Button(action: {
                         navigation.navigateTo(.mainDashboard)
@@ -72,14 +72,13 @@ struct AnalyticsDashboardView: View {
                     
                     Spacer()
                     
-                    // Invisible placeholder for symmetry
+                   
                     Color.clear
                         .frame(width: 80, height: 36)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                
-                // Digest Period Selector
+              
                 DigestPeriodSelector(
                     selectedPeriod: $selectedDigestPeriod,
                     digestPeriods: digestPeriods,
@@ -92,7 +91,7 @@ struct AnalyticsDashboardView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // TOP SECTION: Persistent Weekly Insights
+                
                     VStack(spacing: 16) {
                             if let weekly = viewModel.weeklyInsight {
                                 PersistentWeeklyInsightSection(weekly: weekly, periodName: getPeriodDisplayName())
@@ -105,9 +104,9 @@ struct AnalyticsDashboardView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
                         
-                        // BOTTOM SECTION: World-Specific Recommendations
+                        
                         VStack(spacing: 16) {
-                            // World Selection for Recommendations
+                        
                             RecommendationsWorldSelector(
                                 selectedWorld: $viewModel.selectedWorld,
                                 availableWorlds: availableWorlds,
@@ -116,7 +115,7 @@ struct AnalyticsDashboardView: View {
                                 }
                             )
                             
-                            // Recommendations Content
+                          
                             if viewModel.isLoading {
                                 RecommendationsLoadingView()
                             } else if let recommendations = viewModel.comicRecommendations {
@@ -139,7 +138,7 @@ struct AnalyticsDashboardView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 100) // Space for bottom bar
+                        .padding(.bottom, 100) 
                     }
                 }
                 
@@ -155,8 +154,7 @@ struct AnalyticsDashboardView: View {
         }
         .onAppear { 
             viewModel.fetchAnalyticsWithPeriod(userId: userId, period: selectedDigestPeriod, worldType: viewModel.selectedWorld) 
-            
-            // Start twinkling animation
+      
             Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { _ in
                 twinkleToggle.toggle()
             }
@@ -173,12 +171,11 @@ struct AnalyticsDashboardView: View {
     }
 }
 
-// MARK: - Persistent Weekly Insights Section
+
 struct PersistentWeeklyInsightSection: View {
     let weekly: WeeklyInsight
     let periodName: String
-    
-    // Computed property to merge duplicate genres (case-insensitive)
+ 
     private var consolidatedGenres: [GenreStats] {
         var genreMap: [String: GenreStats] = [:]
         
@@ -186,7 +183,6 @@ struct PersistentWeeklyInsightSection: View {
             let normalizedKey = genre.genre.lowercased()
             
             if let existing = genreMap[normalizedKey] {
-                // Merge the counts and recalculate percentage
                 let newCount = existing.count + genre.count
                 let newPercentage = existing.percentage + genre.percentage
                 genreMap[normalizedKey] = GenreStats(
@@ -203,13 +199,13 @@ struct PersistentWeeklyInsightSection: View {
             }
         }
         
-        // Sort by count descending
+     
         return Array(genreMap.values).sorted { $0.count > $1.count }
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Section Header
+
             HStack {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 24))
@@ -233,7 +229,7 @@ struct PersistentWeeklyInsightSection: View {
             .padding(.top, 20)
             
             VStack(alignment: .leading, spacing: 16) {
-                // Week period
+              
                 HStack {
                     Image(systemName: "calendar")
                         .font(.system(size: 16))
@@ -244,10 +240,10 @@ struct PersistentWeeklyInsightSection: View {
                         .foregroundColor(.white.opacity(0.9))
                 }
                 
-                // Stats grid
+        
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 1), spacing: 16) {
                     
-                    // Top Genres
+                
                     if !consolidatedGenres.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -285,7 +281,7 @@ struct PersistentWeeklyInsightSection: View {
                         )
                     }
                     
-                    // Top Art Styles
+         
                     if !weekly.topArtStyles.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -323,7 +319,7 @@ struct PersistentWeeklyInsightSection: View {
                         )
                     }
                     
-                    // World Distribution
+      
                     if !weekly.worldDistribution.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -372,7 +368,7 @@ struct PersistentWeeklyInsightSection: View {
     }
 }
 
-// MARK: - Recommendations World Selector
+
 struct RecommendationsWorldSelector: View {
     @Binding var selectedWorld: String
     let availableWorlds: [(String, String, String, Color)]
@@ -408,7 +404,7 @@ struct RecommendationsWorldSelector: View {
     }
 }
 
-// MARK: - Recommendation World Button
+
 struct RecommendationWorldButton: View {
     let worldId: String
     let worldName: String
@@ -445,7 +441,7 @@ struct RecommendationWorldButton: View {
     }
 }
 
-// MARK: - Weekly Insights Loading View
+
 struct WeeklyInsightsLoadingView: View {
     let periodName: String
     
@@ -483,7 +479,7 @@ struct WeeklyInsightsLoadingView: View {
     }
 }
 
-// MARK: - Weekly Insights Error View
+
 struct WeeklyInsightsErrorView: View {
     let error: String
     let periodName: String
@@ -527,7 +523,7 @@ struct WeeklyInsightsErrorView: View {
     }
 }
 
-// MARK: - Recommendations Loading View
+
 struct RecommendationsLoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
@@ -548,7 +544,7 @@ struct RecommendationsLoadingView: View {
     }
 }
 
-// MARK: - No Recommendations View
+
 struct NoRecommendationsView: View {
     let worldType: String
     let isGenerating: Bool
@@ -620,7 +616,7 @@ struct NoRecommendationsView: View {
 
 
 
-// MARK: - Themed Comic Recommendations Section
+
 struct ThemedComicRecommendationsSection: View {
     let recommendations: ComicRecommendationsResponse
     let worldType: String
@@ -699,7 +695,7 @@ struct ThemedComicRecommendationsSection: View {
     }
 }
 
-// MARK: - Themed Recommendation Card
+
 struct ThemedRecommendationCard: View {
     let recommendation: ComicRecommendation
     let index: Int
@@ -707,7 +703,7 @@ struct ThemedRecommendationCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header with title and confidence
+      
                         HStack {
                 Text("\(index). \(recommendation.title)")
                     .font(.system(size: 18, weight: .bold))
@@ -797,7 +793,6 @@ struct ThemedRecommendationCard: View {
 
 
 
-// MARK: - Digest Period Selector Component
 struct DigestPeriodSelector: View {
     @Binding var selectedPeriod: String
     let digestPeriods: [(String, String, String)]

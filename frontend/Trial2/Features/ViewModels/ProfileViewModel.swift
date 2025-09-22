@@ -1,25 +1,24 @@
 import Foundation
 import Combine
 
-// MARK: - ProfileViewModel
+
 @MainActor
 class ProfileViewModel: ObservableObject {
-    // MARK: - Published Properties (View State)
+
     @Published var userName: String = ""
     @Published var userEmail: String = ""
     @Published var userFullName: String = ""
     @Published var profileImageUrl: URL? = nil
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
-    
-    // MARK: - Account Deletion Properties (New)
+
     @Published var showingAccountDeletion = false
     @Published var isDeletingAccount = false
     @Published var deletionSummary: DeletionSummary? = nil
 
     private let authManager = AuthManager.shared
 
-    // MARK: - Initialization
+
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(handleLogout), name: .userDidLogout, object: nil)
         loadUserProfile()
@@ -121,7 +120,7 @@ class ProfileViewModel: ObservableObject {
         print("User logged out successfully.")
     }
     
-    // MARK: - Account Deletion Methods (New functionality)
+
     
     /// Shows the account deletion confirmation dialog
     func showAccountDeletion() {
